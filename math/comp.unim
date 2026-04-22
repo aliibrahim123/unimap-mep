@@ -1,0 +1,28 @@
+import math.nb { zero };
+import math.arith { sub, sub_borrow };
+symbol pos, neg;
+
+fn sign (nb) => nb[15]: {
+	0 => pos, 1 => pos, 2  => pos, 3  => pos, 4  => pos, 5  => pos, 6  => pos, 7  => pos, 
+	8 => neg, 9 => neg, 10 => neg, 11 => neg, 12 => neg, 13 => neg, 14 => neg, 15 => neg
+};
+
+fn eq (a, b) => a: { b => 1, _ => 0 };
+
+fn comp (a, b) => sub(a, b): {
+	zero => 0,
+	let diff => eq(sign(a), sign(b)): {
+		1 => sign(diff): { pos => 1, neg => 2 },
+		0 => sign(a): { pos => 1, neg => 2 }
+	}
+};
+fn ucomp (a, b) => sub_borrow(a, b, 0): {
+	[zero, _] => 0,
+	[_, 0] => 1,
+	_ => 2,
+};
+
+fn min (a, b) => comp(a, b): { 1 => b, _ => a };
+fn max (a, b) => comp(a, b): { 1 => a, _ => b };
+fn umin (a, b) => ucomp(a, b): { 1 => b, _ => a };
+fn umax (a, b) => ucomp(a, b): { 1 => a, _ => b };
