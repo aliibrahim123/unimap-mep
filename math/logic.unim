@@ -65,6 +65,7 @@ fn ctz_dg (dg) => dg: {
 	1 => 0, 2  => 1, 3  => 0, 4  => 2, 5  => 0, 6  => 1, 7  => 0, 8 => 3, 
 	9 => 0, 10 => 1, 11 => 0, 12 => 2, 13 => 0, 14 => 1, 15 => 0
 };
+// scan by dg from low till first non zero
 fn ctz_loop (nb, dg, pos) => nb[dg]: {
 	0 => ctz_loop(nb, inc_dg(dg), add8(pos, [4, 0])),
 	_ => add8(pos, [ctz_dg(nb[dg]), 0])
@@ -79,6 +80,7 @@ fn clz_dg (dg) => dg: {
 	1 => 3, 2  => 2, 3  => 2, 4  => 1, 5  => 1, 6  => 1, 7  => 1, 8 => 0, 
 	9 => 0, 10 => 0, 11 => 0, 12 => 0, 13 => 0, 14 => 0, 15 => 0
 };
+// scan by dg from high till first non zero
 fn clz_loop (nb, dg, pos) => nb[dg]: {
 	0 => clz_loop(nb, dec_dg(dg), add8(pos, [4, 0])),
 	_ => add8(pos, [clz_dg(nb[dg]), 0])
@@ -87,6 +89,7 @@ fn clz (nb) => nb: { zero => [0, 4], _ => clz_loop(nb, 15, [0, 0]) };
 
 fn cto (nb) => ctz(not(nb));
 fn clo (nb) => clz(not(nb));
+// count leading sign
 fn cls (nb) => sign(nb): { pos => clz(nb), neg => clo(nb) };
 
 fn rev_dg (dg) => dg: {

@@ -1,3 +1,4 @@
+// precomputed lookup tables for math operations
 fn and_dg (a, b) => a: {
 	0 => b: {
 		0 => 0,
@@ -1160,6 +1161,7 @@ fn add_dg (a, b, c) => a: {
 	},
 };
 
+// (amount, nb, filler) => funnel_shift_dg(nb, filler, amount)
 fn shift_dg (am, a, b) => am: {
 	0 => a,
 	1 => a: {

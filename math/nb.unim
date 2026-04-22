@@ -1,3 +1,4 @@
+// hex digits
 let a = 10;
 let b = 11;
 let c = 12;
@@ -23,6 +24,7 @@ let zeros4  = [0, 0, 0, 0];
 let zeros3  = [0, 0, 0];
 let ffff = [15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15];
 
+// [u0_3, u45] => [u01, u2_5]
 fn u6_u4u2 (nb) => nb[0]: {
 	0  => nb[1]: { 0 => [0, 0], 1 => [0, 4], 2 => [0,  8], 3 => [0, 12] },
 	1  => nb[1]: { 0 => [1, 0], 1 => [1, 4], 2 => [1,  8], 3 => [1, 12] },
@@ -42,6 +44,7 @@ fn u6_u4u2 (nb) => nb[0]: {
 	15 => nb[1]: { 0 => [3, 3], 1 => [3, 7], 2 => [3, 11], 3 => [3, 15] },
 };
 
+// extract a bit from a dg
 fn bit_dg (dg, bit) => bit: {
 	0 => dg: {
 		0 => 0, 1 => 1, 2  => 0, 3  => 1, 4  => 0, 5  => 1, 6  => 0, 7  => 1, 
@@ -60,8 +63,10 @@ fn bit_dg (dg, bit) => bit: {
 		8 => 1, 9 => 1, 10 => 1, 11 => 1, 12 => 1, 13 => 1, 14 => 1, 15 => 1
 	}
 };
+// extract a bit from a number
 fn bit (nb, bit_high, bit_low) => bit_dg(nb[bit_high], bit_low);
 
+// convertion to/from binary (just symbols of 4 0|1 chars)
 symbol 0000, 0001, 0010, 0011, 0100, 0101, 0110, 0111;
 fn dg2bin (dg) => dg: {
 	0 => 0000, 1 => 0001, 2  => 0010, 3  => 0011, 4  => 0100, 5  => 0101, 6  => 0110, 7  => 0111,
@@ -84,6 +89,8 @@ fn bin2nb(bin) => [
 	bin2dg(bin[ 3]), bin2dg(bin[ 2]), bin2dg(bin[ 1]), bin2dg(bin[ 0]),
 ];
 
+// write numbers in a convanient way
+// 0..16 dg big endian to 16 dg little endian
 fn nb (dgs) => dgs: {
 	[] => [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 	[let d0] => [
@@ -153,6 +160,7 @@ fn nb (dgs) => dgs: {
 	],
 };
 
+// repeat 1 from low n times
 fn n_ones (n) => n[1]: {
 	0 => n[0]: {
 		0  => [ 0,  0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],

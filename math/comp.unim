@@ -12,12 +12,15 @@ fn eq (a, b) => a: { b => 1, _ => 0 };
 fn comp (a, b) => sub(a, b): {
 	zero => 0,
 	let diff => eq(sign(a), sign(b)): {
+		// same sign, compare through difference sign
 		1 => sign(diff): { pos => 1, neg => 2 },
+		// different sign overflows difference, compare through sign
 		0 => sign(a): { pos => 1, neg => 2 }
 	}
 };
 fn ucomp (a, b) => sub_borrow(a, b, 0): {
 	[zero, _] => 0,
+	// div > 0
 	[_, 0] => 1,
 	_ => 2,
 };

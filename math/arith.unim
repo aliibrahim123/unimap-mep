@@ -4,6 +4,8 @@ import math.logic { not, not8, or };
 import math.comp { sign, neg, pos, eq };
 import math.shift { shift68_l1, shift128_by1 };
 
+// (a: nb, b: nb, carry: bit) -> [sum: nb, carry: bit]
+// ripple carry adder design
 fn add (a, b, c) => add_dg(a[0], b[0], c): {
 	[let s0,  let c] => add_dg(a[ 1], b[ 1], c): {
 	[let s1,  let c] => add_dg(a[ 2], b[ 2], c): {
@@ -24,8 +26,9 @@ fn add (a, b, c) => add_dg(a[0], b[0], c): {
 }}}}}}}}}}}}}}}};
 
 fn sub (a, b) => add(a, not(b), 1)[0];
-fn sub_borrow (a, b, c) => add(a, not(b), c: { 0 => 1, 1 => 0 }): {
-	[let sum, let carry] => [sum, carry: { 0 => 1, 1 => 0 }]
+// (a: nb, b: nb, borrow: bit) -> [sum: nb, borrow: bit]
+fn sub_borrow (a, b, borrow) => add(a, not(b), borrow: { 0 => 1, 1 => 0 }): {
+	[let sum, let borrow] => [sum, borrow: { 0 => 1, 1 => 0 }]
 };
 
 fn add16 (a, b) => add_dg(a[0], b[0], 0): {
@@ -34,6 +37,7 @@ fn add16 (a, b) => add_dg(a[0], b[0], 0): {
 	[let s2,  let c] => add_dg(a[ 3], b[ 3], c): {
 	[let s3,  _] => [s0, s1, s2, s3],
 }}}};
+// (a: n8, b: n8, carry: bit) -> [sum: n8, carry: bit]
 fn add8_op (a, b, c) => add_dg(a[0], b[0], c): {
 	[let s0,  let c] => add_dg(a[ 1], b[ 1], c): {
 	[let s1, _] => [s0, s1],
@@ -61,19 +65,24 @@ fn add68 (a, b) => add_dg(a[0], b[0], 0): {
 	[let s13, let c] => add_dg(a[14], b[14], c): {
 	[let s14, let c] => add_dg(a[15], b[15], c): {
 	[let s15, let c] => add_dg(a[16], b[16], c): {
+	// 68 bit number with additional zero at high for mult
 	[let s16, _] => [s0, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13, s14, s15, s16, 0]
 }}}}}}}}}}}}}}}}};
-
+// a:n64 * b:dg + acc:n68 -> n68
 fn mult_dg (a, b, acc) => add68(acc, add68(
 	add68(
 		bit_dg(b, 0): { 1 => a, 0 => zeros17 }, 
 		bit_dg(b, 1): { 1 => shift68_l1(a, 1), 0 => zeros17 }
-	), add68(
+	), 
+	add68(
 		bit_dg(b, 2): { 1 => shift68_l1(a, 2), 0 => zeros17 },
 		bit_dg(b, 3): { 1 => shift68_l1(a, 3), 0 => zeros17 }
 	)
 ));
+// a:nb * b:dg -> [low:nb, high:nb]
+// mult dg by dg from low
 fn mult (a, b) => [..a, 0] |> mult_dg(_, b[0], zeros17): {
+	// this shift the product by a dg
 	[let p0, ..let p_rest] => mult_dg(_, b[1], p_rest): {
 	[let p1, ..let p_rest] => mult_dg(_, b[2], p_rest): {
 	[let p2, ..let p_rest] => mult_dg(_, b[3], p_rest): {
@@ -94,24 +103,28 @@ fn mult (a, b) => [..a, 0] |> mult_dg(_, b[0], zeros17): {
 	],
 }}}}}}}}}}}}}}}};
 
+// (divisor, [quotient, remainder]) -> [quotient, remainder]
+// reserve place for 1 bit of quotient
 fn udiv1 (div, acc) => shift128_by1(acc): {
 	[let quo, let acc] => sub(acc, div) |> sign(_): {
+		// if remainder > divisor, set bit to one and dec remainder
 		pos => [or(quo, one), _], 
+		// else do nothing
 		neg => [quo, acc]
 	}
 };
-fn udiv8 (div, acc) => 
-	udiv1(div, acc) |> udiv1(div, _) |> udiv1(div, _) |> udiv1(div, _) |>
-	udiv1(div, _) |> udiv1(div, _) |> udiv1(div, _) |> udiv1(div, _);
-fn udiv64 (a, b) => 
-	udiv8(b, [a, zero]) |> udiv8(b, _) |> udiv8(b, _) |> udiv8(b, _) |>
-	udiv8(b, _) |> udiv8(b, _) |> udiv8(b, _) |> udiv8(b, _);
+// over 3 level since 1 level is 64 expr
+fn udiv4 (div, acc) => udiv1(div, acc) |> udiv1(div, _) |> udiv1(div, _) |> udiv1(div, _);
+fn udiv16 (div, acc) => udiv4(div, acc) |> udiv4(div, _) |> udiv4(div, _) |> udiv4(div, _);
+fn udiv64 (a, b) => udiv16(b, [a, zero]) |> udiv16(b, _) |> udiv16(b, _) |> udiv16(b, _);
 fn udiv (a, b) => b: {
 	zero => [zero, a], 
 	_ => udiv64(a, b)
 };
+// (a:nb, b:nb) => [a /.floor b, a % b]
 fn div (a, b) => b: {
-	zero => [zero, a], 
+	zero => [zero, a],
+	// divide unsignly then resign quo and rem
 	_ => udiv64(abs(a), abs(b)): {
 		[let quo, let rem] => [
 			eq(sign(a), sign(b)): { 1 => quo, 0 => negate(quo) }, 
