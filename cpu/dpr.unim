@@ -1,0 +1,102 @@
+import cpu.common { invalid, panic, regs, write_reg, dec_3reg, dec_2reg, dec_4reg, u2u4_u6 };
+import math.nb { low1, low2, high2 };
+import math.arith { add, sub, abs };
+import math.logic { 
+	and, or, not, xor, nand, nor, xnor, imply, bcr, count_bits, count_zeros, 
+	cls, clz, clo, ctz, cto, rev, rev8, rev16, rev32 
+};
+import math.shift { shl, shr, sar, rol, sign_ext8, sign_ext16, sign_ext32 };
+
+fn exec_dpr (inst, state) => inst[1]: {
+	0 => exec_3regs(inst, state),
+	1 => exec_2regs(inst, state),
+	2 => exec_4regs(inst, state),
+	8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 => exec_shift(inst, state),
+	_ => invalid(state, inst)
+};
+
+fn exec_shift (inst, state) => [
+	dec_3reg(inst[4], inst[5], inst[6], inst[7]), u2u4_u6(high2(inst[2]), inst[3])
+]: {
+	[[let dst, let src1, let src2], let shift_amount] => low2(inst[2]): {
+		0 => shift_amount: { 
+			0 => state.regs[src2], 
+			_ => shl(state.regs[src2], shift_amount) 
+		},
+		1 => shr(state.regs[src2], shift_amount),
+		2 => sar(state.regs[src2], shift_amount),
+		3 => rol(state.regs[src2], shift_amount)
+	} 
+	|> low1(inst[4]): {
+		0 => inst[1]: {
+			8  => write_reg(state, dst, add(state.regs[src1], _)),
+			9  => write_reg(state, dst, sub(state.regs[src1], _)),
+			10 => write_reg(state, dst, sub(_, state.regs[src1])),
+			_ => invalid(state, inst)
+		},
+		1 => inst[1]: {
+			8 => write_reg(state, dst, and(state.regs[src1], _)),
+			9 => write_reg(state, dst, or(state.regs[src1], _)),
+			10 => write_reg(state, dst, xor(state.regs[src1], _)),
+			11 => write_reg(state, dst, imply(state.regs[src1], _)),
+			12 => write_reg(state, dst, nand(state.regs[src1], _)),
+			13 => write_reg(state, dst, nor(state.regs[src1], _)),
+			14 => write_reg(state, dst, xnor(state.regs[src1], _)),
+			15 => write_reg(state, dst, bcr(state.regs[src1], _)),
+		}
+	}
+};
+
+fn exec_3regs (inst, state) => dec_3reg(inst[4], inst[5], inst[6], inst[7]): {
+	[let dst, let src1, let src2] => inst[2]: {
+		0 => inst[3]: {
+			_ => invalid(state, inst)
+		},
+		_ => invalid(state, inst)
+	}
+};
+
+fn exec_2regs (inst, state) => dec_2reg(inst[5],inst[6], inst[7]): {
+	[let dst, let src] => inst[2]: {
+		0 => inst[3]: {
+			0 => inst[4]: {
+				0 => write_reg(state, dst, count_bits(state.regs[src])),
+				1 => write_reg(state, dst, count_zeros(state.regs[src])),
+				2 => write_reg(state, dst, abs(state.regs[src])),
+				3 => write_reg(state, dst, cls(state.regs[src])),
+				4 => write_reg(state, dst, clz(state.regs[src])),
+				5 => write_reg(state, dst, clo(state.regs[src])),
+				6 => write_reg(state, dst, ctz(state.regs[src])),
+				7 => write_reg(state, dst, cto(state.regs[src])),
+				8 => write_reg(state, dst, rev(state.regs[src])),
+				9 => write_reg(state, dst, rev8(state.regs[src])),
+				10 => write_reg(state, dst, rev16(state.regs[src])),
+				11 => write_reg(state, dst, rev32(state.regs[src])),
+				12 => write_reg(state, dst, sign_ext8(state.regs[src])),
+				13 => write_reg(state, dst, sign_ext16(state.regs[src])),
+				14 => write_reg(state, dst, sign_ext32(state.regs[src])),
+				_ => invalid(state, inst)
+			},
+			_ => invalid(state, inst)
+		},
+		_ => invalid(state, inst)
+	}
+};
+
+fn exec_4regs (inst, state) => dec_4reg(inst[3], inst[4], inst[5], inst[6], inst[7]): {
+	[let dst, let src1, let src2, let src3] => inst[2]: {>)}]|[{(<
+		0 => write_reg(state, dst, add(state.regs[src3], mult(state.regs[src1], state.regs[src2])[0])),
+		1 => write_reg(state, dst, sub(state.regs[src3], mult(state.regs[src1], state.regs[src2])[0])),
+		2 => mult(state.regs[src2], state.regs[src3]) |> write_2reg(state, dst, _[0], src1, _[1]),
+		3 => div(state.regs[src2], state.regs[src3]) |> write_2reg(state, dst, _[0], src2, _[1]),
+		4 => udiv(state.regs[src2], state.regs[src3]) |> write_2reg(state, dst, _[0], src2, _[1]),
+		5 => write_reg(state, dst, add(state.regs[src3], add(state.regs[src1], state.regs[src2]))),
+		6 => write_reg(state, dst, funnel_shift(state.regs[src1], state.regs[src2], mod64(state.regs[src3]))),
+		_ => invalid(state, inst)
+	}
+};
+
+fn mod64 (value) => [value[0], value[1]: {
+	0 => 0, 1 => 1, 2  => 2, 3  => 3, 4  => 0, 5  => 1, 6  => 2, 7  => 3,
+	8 => 0, 9 => 1, 10 => 2, 11 => 3, 12 => 0, 13 => 1, 14 => 2, 15 => 3
+}];

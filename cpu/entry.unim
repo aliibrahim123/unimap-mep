@@ -1,0 +1,21 @@
+import math.nb { zero };
+import cpu.common { regs, pc, mem, invalid };
+import cpu.dpr { exec_dpr };
+symbol continue, end;
+
+let init_state = {
+	regs = { 
+		0  = zero, 1  = zero, 2  = zero, 3  = zero, 4  = zero, 5  = zero, 6  = zero, 7  = zero, 
+		8  = zero, 9  = zero, 10 = zero, 11 = zero, 12 = zero, 13 = zero, 14 = zero, 15 = zero, 
+		16 = zero, 17 = zero, 18 = zero, 19 = zero, 20 = zero, 21 = zero, 22 = zero, 23 = zero, 
+		24 = zero, 25 = zero, 26 = zero, 27 = zero, 28 = zero, 29 = zero, 30 = zero, 31 = zero
+	},
+	pc = zero,
+	mem = {},
+};
+fn run_iter (state) => [end, exec([0], state)];
+
+fn exec (inst, state) => inst[0]: {
+	1 => exec_dpr(inst, state),
+	_ => invalid(state, inst),
+};
