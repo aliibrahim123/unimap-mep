@@ -8,6 +8,7 @@ fn sign (nb) => nb[15]: {
 };
 
 fn eq (a, b) => a: { b => 1, _ => 0 };
+fn ne (a, b) => a: { b => 0, _ => 1 };
 
 fn comp (a, b) => sub(a, b): {
 	zero => 0,

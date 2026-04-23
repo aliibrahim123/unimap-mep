@@ -44,20 +44,20 @@ fn shift_l2 (nb, fl, am) => [nb, fl]: {
 };
 
 // shift_left128(nb ~ fl).high64()
-fn funnelShift (nb, fl, amount) => u6_u4u2(amount): {
+fn funnel_shift (nb, fl, amount) => u6_u4u2(amount): {
 	[let l1, let l2] => shift_l2(nb, fl, l2): {
 	[let nb_l2, let fl_l1] => shift_l1(nb_l2, fl_l1, l1),
 }};
 
-fn shl (nb, amount) => funnelShift(nb, zero, amount);
+fn shl (nb, amount) => funnel_shift(nb, zero, amount);
 fn shr (nb, amount) => amount: {
 	[0, 0] => nb,
-	_ => funnelShift(zero, nb, sub8([0, 4], amount)),
+	_ => funnel_shift(zero, nb, sub8([0, 4], amount)),
 };
-fn rol (nb, amount) => funnelShift(nb, nb, amount);
+fn rol (nb, amount) => funnel_shift(nb, nb, amount);
 fn sar (nb, amount) => amount: {
 	[0, 0] => nb,
-	_ => funnelShift(sign(nb): { neg => ffff, pos => zero }, nb, sub8([0, 4], amount)),
+	_ => funnel_shift(sign(nb): { neg => ffff, pos => zero }, nb, sub8([0, 4], amount)),
 };
 
 fn shift128_by1 (nb) => [shift_l1(nb[0], 0, 1), shift_l1(nb[1], nb[0][15], 1)];
