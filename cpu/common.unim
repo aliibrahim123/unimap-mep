@@ -1,5 +1,5 @@
-import math.nb { low1, low2, low3, high1, high2, high3 };
-symbol regs, pc, mem;
+import math.nb { zero, one, low1, low2, low3, high1, high2, high3 };
+symbol regs, pc, mem, c0;
 
 symbol invalid_instruction;
 fn invalid (state, inst) => dbg([invalid_instruction, state.pc, inst]) |> panic();
@@ -18,6 +18,20 @@ fn write_2reg (state, reg0, value0, reg1, value1) => reg0: {
 		0 => { ..state, regs = { ..state.regs, [reg0] = value0 } },
 		_ => { ..state, regs = { ..state.regs, [reg0] = value0, [reg1] = value1 } }
 	}
+};
+
+fn read_cond(state, reg) => reg: {
+	0 => state.c0,
+	_ => state.regs[reg]: { zero => 0, _ => 1 },
+};
+fn read_cond_nb(state, reg) => reg: {
+	0 => state.c0: { 0 => zero, 1 => one },
+	_ => state.regs[reg],
+};
+fn write_cond (state, reg, value) => reg: {
+	0 => { ..state, c0 = value },
+	_ => value: { 0 => zero, 1 => one } 
+		|> { ..state, regs = { ..state.regs, [reg] = _  } }
 };
 
 fn dec_reg0 (field0, field1) => high3(field0): {
@@ -60,6 +74,7 @@ fn dec_3reg (field0, field1, field2, field3) => [
 fn dec_2reg (field0, field1, field2) => [
 	dec_reg1(field0, field1), dec_reg2(field1, field2)
 ];
+fn dec_1reg (field0, field1) => dec_reg2(field0, field1);
 fn dec_4reg (field-1, field0, field1, field2, field3) => [
 	dec_reg-1(field-1, field0), dec_reg0(field0, field1), dec_reg1(field1, field2), dec_reg2(field2, field3)
 ];
