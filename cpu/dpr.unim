@@ -87,10 +87,10 @@ fn exec_3regs (inst, state) => dec_3reg(inst[4], inst[5], inst[6], inst[7]): {
 	}
 };
 fn map_cond (state, inst, dst, cond) => high1(inst[3]): {
-	0 => write_cond(state, dst, _),
+	0 => write_cond(state, dst, cond),
 	1 => write_cond(state, dst, low1(inst[4]): {
-		0 => and1(read_cond(state, dst), _),
-		1 => or1(read_cond(state, dst), _),
+		0 => and1(read_cond(state, dst), cond),
+		1 => or1(read_cond(state, dst), cond),
 	})
 };
 
@@ -124,18 +124,21 @@ fn exec_2regs (inst, state) => dec_2reg(inst[5],inst[6], inst[7]): {
 fn exec_4regs (inst, state) => dec_4reg(inst[3], inst[4], inst[5], inst[6], inst[7]): {
 	[let dst, let src1, let src2, let src3] => inst[2]: {
 		0 => add_op(state.regs[src1], state.regs[src2], read_cond(state, src3))
-			|> write_reg(state, dst, _[0]) |> write_cond(state, src3, _[1]),
+			|> write_cond(write_reg(state, dst, _[0]), src3, _[1]),
 		1 => sub_borrow(state.regs[src1], state.regs[src2], read_cond(state, src3))
-			|> write_reg(state, dst, _[0]) |> write_cond(state, src3, _[1]),
+			|> write_cond(write_reg(state, dst, _[0]), src3, _[1]),
 		2 => add(state.regs[src1], state.regs[src2]) |> add(state.regs[src3], _)
 			|> write_reg(state, dst, _),
 		
-		3 => mult(state.regs[src1], state.regs[src2]) |> add(state.regs[src3], _)
+		3 => mult(state.regs[src1], state.regs[src2]) |> add(state.regs[src3], _[0])
 			|> write_reg(state, dst, _),
-		4 => mult(state.regs[src1], state.regs[src2]) |> sub(state.regs[src3], _)
+		4 => mult(state.regs[src1], state.regs[src2]) |> sub(state.regs[src3], _[0])
 			|> write_reg(state, dst, _),
-		5 => mult(state.regs[src2], state.regs[src3]) 
-			|> write_2reg(state, dst, _[0], src1, _[1]),
+		5 => mult(state.regs[src2], state.regs[src3])
+			|> write_2reg(state, dst, _[0], src1, [
+				_[1][0], _[1][1], _[1][2], _[1][3], _[1][4], _[1][5], _[1][6], _[1][7],
+				_[1][8], _[1][9], _[1][10], _[1][11], _[1][12], _[1][13], _[1][14], _[1][15]
+			]),
 		6 => div(state.regs[src2], state.regs[src3]) 
 			|> write_2reg(state, dst, _[0], src2, _[1]),
 		7 => udiv(state.regs[src2], state.regs[src3]) 

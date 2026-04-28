@@ -4,11 +4,11 @@ import cpu.common {
 import math.nb { zero, low1, low2, mid2, high1, high2, bit_dg, n_ones };
 import math.arith { add, sub };
 import math.logic { and, or, xor, nand, nor, xnor, imply, bcr, and1 };
-import math.comp { eq, ne, comp };
+import math.comp { eq, ne, comp, ucomp };
 import math.shift { bitfield_extract, bitfield_insert, rol };
 
 fn exec_dpi (inst, state) => inst[1]: {
-	0 | 1 | 2 | 4 => exec_logic(inst, state),
+	0 | 1 | 2 | 3 => exec_logic(inst, state),
 	4 => exec_arith(inst, state),
 	5 | 6 => exec_comp(inst, state),
 	7 | 8 | 9 => exec_bit_test(inst, state),
