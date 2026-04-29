@@ -25,6 +25,7 @@ fn exec_dpr (inst, state) => inst[1]: {
 fn exec_shift (inst, state) => [
 	dec_3reg(inst[4], inst[5], inst[6], inst[7]), u2u4_u6(high2(inst[2]), inst[3])
 ]: {
+	// shift
 	[[let dst, let src1, let src2], let shift_amount] => low2(inst[2]): {
 		0 => shift_amount: { 
 			0 => state.regs[src2], 
@@ -33,22 +34,34 @@ fn exec_shift (inst, state) => [
 		1 => shr(state.regs[src2], shift_amount),
 		2 => sar(state.regs[src2], shift_amount),
 		3 => rol(state.regs[src2], shift_amount)
-	} 
+	}
+	// then compute
 	|> low1(inst[4]): {
 		0 => inst[1]: {
+			// add dst:reg, src1:reg, src2:sh_reg
 			8  => add(state.regs[src1], _),
+			// sub dst:reg, src1:reg, src2:sh_reg
 			9  => sub(state.regs[src1], _),
+			// sub dst:reg, src1:sh_reg, src2:reg
 			10 => sub(_, state.regs[src1]),
 			_ => invalid(state, inst)
 		},
 		1 => inst[1]: {
+			// and dst:reg, src1:reg, src2:sh_reg
 			8 => and(state.regs[src1], _),
+			// or dst:reg, src1:reg, src2:sh_reg
 			9 => or(state.regs[src1], _),
+			// xor dst:reg, src1:reg, src2:sh_reg
 			10 => xor(state.regs[src1], _),
+			// imply dst:reg, src1:reg, src2:sh_reg
 			11 => imply(state.regs[src1], _),
+			// nand dst:reg, src1:reg, src2:sh_reg
 			12 => nand(state.regs[src1], _),
+			// nor dst:reg, src1:reg, src2:sh_reg
 			13 => nor(state.regs[src1], _),
+			// xnor dst:reg, src1:reg, src2:sh_reg
 			14 => xnor(state.regs[src1], _),
+			// bcr dst:reg, src1:reg, src2:sh_reg
 			15 => bcr(state.regs[src1], _),
 		}
 	} |> write_reg(state, dst, _)
@@ -57,35 +70,52 @@ fn exec_shift (inst, state) => [
 fn exec_3regs (inst, state) => dec_3reg(inst[4], inst[5], inst[6], inst[7]): {
 	[let dst, let src1, let src2] => inst[2]: {
 		0 => inst[3]: {
+			// min dst:reg, src1:reg, src2:reg
 			0 => min(state.regs[src1], state.regs[src2]),
+			// max dst:reg, src1:reg, src2:reg
 			1 => max(state.regs[src1], state.regs[src2]),
+			// umin dst:reg, src1:reg, src2:reg
 			2 => umin(state.regs[src1], state.regs[src2]),
+			// umax dst:reg, src1:reg, src2:reg
 			3 => umax(state.regs[src1], state.regs[src2]),
+			// cnot dst:reg, cond:reg, src:reg
 			4 => state.regs[src2] |> read_cond(state, src1): { 1 => not(_), 0 => _ },
+			// cinc dst:reg, cond:reg, src:reg
 			5 => state.regs[src2] |> read_cond(state, src1): { 1 => add(_, one), 0 => _ },
+			// cneg dst:reg, cond:reg, src:reg
 			6 => state.regs[src2] |> read_cond(state, src1): { 1 => negate(_), 0 => _ },
 			_ => invalid(state, inst)
 		} |> write_reg(state, dst, _),
 
 		1 => low3(inst[3]): {
+			// comp.eq cond:reg, src1:reg, src2:reg
 			0 => eq(state.regs[src1], state.regs[src2]),
+			// comp.ne cond:reg, src1:reg, src2:reg
 			1 => ne(state.regs[src1], state.regs[src2]),
+			// comp.gt cond:reg, src1:reg, src2:reg
 			2 => comp(state.regs[src1], state.regs[src2]): { 1 => 1, _ => 0 },
+			// comp.le cond:reg, src1:reg, src2:reg
 			3 => comp(state.regs[src1], state.regs[src2]): { 1 => 0, _ => 1 },
+			// ucomp.gt cond:reg, src1:reg, src2:reg
 			4 => ucomp(state.regs[src1], state.regs[src2]): { 1 => 1, _ => 0 },
+			// ucomp.le cond:reg, src1:reg, src2:reg
 			5 => ucomp(state.regs[src1], state.regs[src2]): { 1 => 0, _ => 1 },
 			_ => invalid(state, inst)
 		} |> map_cond(state, inst, dst, _),
 
 		2 => low3(inst[3]): {
+			// test.none cond:reg, src:reg, mask:reg
 			0 => eq(and(state.regs[src1], state.regs[src2]), zero),
+			// test.any cond:reg, src:reg, mask:reg
 			1 => ne(and(state.regs[src1], state.regs[src2]), zero),
+			// test.all cond:reg, src:reg, mask:reg
 			2 => eq(and(state.regs[src1], state.regs[src2]), state.regs[src2]),
 		} |> map_cond(state, inst, dst, _),
 
 		_ => invalid(state, inst)
 	}
 };
+// write cond, and / or with dst if specified
 fn map_cond (state, inst, dst, cond) => high1(inst[3]): {
 	0 => write_cond(state, dst, cond),
 	1 => write_cond(state, dst, low1(inst[4]): {
@@ -98,20 +128,35 @@ fn exec_2regs (inst, state) => dec_2reg(inst[5],inst[6], inst[7]): {
 	[let dst, let src] => inst[2]: {
 		0 => inst[3]: {
 			0 => inst[4]: {
+				// cnt dst:reg, src:reg
 				0 => n8_nb(count_bits(state.regs[src])),
+				// cntz dst:reg, src:reg
 				1 => n8_nb(count_zeros(state.regs[src])),
+				// abs dst:reg, src:reg
 				2 => abs(state.regs[src]),
+				// cls dst:reg, src:reg
 				3 => cls(state.regs[src]),
+				// clz dst:reg, src:reg
 				4 => clz(state.regs[src]),
+				// clo dst:reg, src:reg
 				5 => clo(state.regs[src]),
+				// ctz dst:reg, src:reg
 				6 => ctz(state.regs[src]),
+				// cto dst:reg, src:reg
 				7 => cto(state.regs[src]),
+				// rev dst:reg, src:reg
 				8 => rev(state.regs[src]),
+				// rev.8 dst:reg, src:reg
 				9 => rev8(state.regs[src]),
+				// rev.16 dst:reg, src:reg
 				10 => rev16(state.regs[src]),
+				// rev.32 dst:reg, src:reg
 				11 => rev32(state.regs[src]),
+				// se.8 dst:reg, src:reg
 				12 => sign_ext8(state.regs[src]),
+				// se.16 dst:reg, src:reg
 				13 => sign_ext16(state.regs[src]),
+				// se.32 dst:reg, src:reg
 				14 => sign_ext32(state.regs[src]),
 				_ => invalid(state, inst)
 			} |> write_reg(state, dst, _),
@@ -123,35 +168,47 @@ fn exec_2regs (inst, state) => dec_2reg(inst[5],inst[6], inst[7]): {
 
 fn exec_4regs (inst, state) => dec_4reg(inst[3], inst[4], inst[5], inst[6], inst[7]): {
 	[let dst, let src1, let src2, let src3] => inst[2]: {
+		// add.carry dst:reg, src1:reg, src2:reg, carry:reg
 		0 => add_op(state.regs[src1], state.regs[src2], read_cond(state, src3))
 			|> write_cond(write_reg(state, dst, _[0]), src3, _[1]),
+		// sub.borrow dst:reg, src1:reg, src2:reg, borrow:reg
 		1 => sub_borrow(state.regs[src1], state.regs[src2], read_cond(state, src3))
 			|> write_cond(write_reg(state, dst, _[0]), src3, _[1]),
+		// add3 dst:reg, src1:reg, src2:reg, src3:reg
 		2 => add(state.regs[src1], state.regs[src2]) |> add(state.regs[src3], _)
 			|> write_reg(state, dst, _),
 		
+		// madd dst:reg, src1:reg, src2:reg, src3:reg
 		3 => mult(state.regs[src1], state.regs[src2]) |> add(state.regs[src3], _[0])
 			|> write_reg(state, dst, _),
+		// msub dst:reg, src1:reg, src2:reg, src3:reg
 		4 => mult(state.regs[src1], state.regs[src2]) |> sub(state.regs[src3], _[0])
 			|> write_reg(state, dst, _),
+		// mult.full plow:reg, phigh:reg, src1:reg, src2:reg
 		5 => mult(state.regs[src2], state.regs[src3])
 			|> write_2reg(state, dst, _[0], src1, [
 				_[1][0], _[1][1], _[1][2], _[1][3], _[1][4], _[1][5], _[1][6], _[1][7],
 				_[1][8], _[1][9], _[1][10], _[1][11], _[1][12], _[1][13], _[1][14], _[1][15]
 			]),
+		// div.full quo:reg, rem:reg, src1:reg, src2:reg
 		6 => div(state.regs[src2], state.regs[src3]) 
 			|> write_2reg(state, dst, _[0], src2, _[1]),
+		// udiv.full quo:reg, rem:reg, src1:reg, src2:reg
 		7 => udiv(state.regs[src2], state.regs[src3]) 
 			|> write_2reg(state, dst, _[0], src2, _[1]),
 
+		// fush dst:reg, src_low:reg, src_high:reg, amount:reg
 		8 => funnel_shift(state.regs[src1], state.regs[src2], mod64(state.regs[src3]))
 			|> write_reg(state, dst, _),
+		// bfext dst:reg, src:reg, offset:reg, width:reg
 		9 => bitfield_extract(state.regs[src1], mod64(state.regs[src2]), mod64(state.regs[src3]))
 			|> write_reg(state, dst, _),
+		// bfins dst:reg, src:reg, offset:reg, width:reg
 		10 => bitfield_insert(
 			state.regs[src1], state.regs[dst], mod64(state.regs[src2]), mod64(state.regs[src3])
 		) |> write_reg(state, dst, _),
 
+		// select dst:reg, cond:reg, src1:reg, src2:reg
 		11 => state.regs[read_cond(state, src1): { zero => src3, _ => src2 }] 
 			|> write_reg(state, dst, _),
 		_ => invalid(state, inst)

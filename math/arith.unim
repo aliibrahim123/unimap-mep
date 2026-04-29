@@ -24,8 +24,8 @@ fn add_op (a, b, c) => add_dg(a[0], b[0], c): {
 	[let s14, let c] => add_dg(a[15], b[15], c): {
 	[let s15, let c] => [[s0, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13, s14, s15], c]
 }}}}}}}}}}}}}}}};
-fn add (a, b) => add_op(a, b, 0)[0];
 
+fn add (a, b) => add_op(a, b, 0)[0];
 fn sub (a, b) => add_op(a, not(b), 1)[0];
 // (a: nb, b: nb, borrow: bit) -> [sum: nb, borrow: bit]
 fn sub_borrow (a, b, borrow) => add_op(a, not(b), borrow: { 0 => 1, 1 => 0 }): {

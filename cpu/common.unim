@@ -11,12 +11,9 @@ fn write_reg (state, reg, value) => reg: {
 	_ => { ..state, regs = { ..state.regs, [reg] = value } }
 };
 fn write_2reg (state, reg0, value0, reg1, value1) => reg0: {
-	0 => reg1: {
-		0 => state,
-		_ => { ..state, regs = { ..state.regs, [reg1] = value1 } }
-	},
+	0 => write_reg(state, reg1, value1),
 	_ => reg1: {
-		0 => { ..state, regs = { ..state.regs, [reg0] = value0 } },
+		0 => write_reg(state, reg0, value0),
 		_ => { ..state, regs = { ..state.regs, [reg0] = value0, [reg1] = value1 } }
 	}
 };
@@ -25,16 +22,13 @@ fn read_cond(state, reg) => reg: {
 	0 => state.c0,
 	_ => state.regs[reg]: { zero => 0, _ => 1 },
 };
-fn read_cond_nb(state, reg) => reg: {
-	0 => state.c0: { 0 => zero, 1 => one },
-	_ => state.regs[reg],
-};
 fn write_cond (state, reg, value) => reg: {
 	0 => { ..state, c0 = value },
-	_ => value: { 0 => zero, 1 => one } 
-		|> { ..state, regs = { ..state.regs, [reg] = _  } }
+	_ => write_reg(state, reg, value: { 0 => zero, 1 => one }) 
 };
 
+// 0123 4567 8901 2345 6789
+// reg-1 reg0  reg1  reg2
 fn dec_reg0 (field0, field1) => high3(field0): {
 	0 => low2(field1): { 0 => 0, 1 =>  8, 2 => 16, 3 => 24 },
 	1 => low2(field1): { 0 => 1, 1 =>  9, 2 => 17, 3 => 25 },
@@ -124,6 +118,7 @@ fn u2u4_u6 (low, high) => high: {
 	15 => low: { 0 => [12, 3], 1 => [13, 3], 2 => [14, 3], 3 => [15, 3] }
 };
 
+// n ones then 0s, pattern repeats based on level
 fn n_ones_leveled (n, high_n) => high_n: {
 	0 => n_ones(n),
 	1 => n[1]: {

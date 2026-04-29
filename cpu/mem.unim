@@ -1,6 +1,9 @@
 import cpu.common { mem, panic };
 import math.nb { zero128 };
 
+// memory is 7 level table, sparse, with 16 byte per line and 16 subpage per page
+// address used is 32 bit, compossed into 8 4 bit sections
+
 fn read_mem_line (state, address) => state.mem: {
   { [address[7]]: let page0 } => page0: {
 	{ [address[6]]: let page1 } => page1: {
