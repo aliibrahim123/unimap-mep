@@ -1,8 +1,12 @@
-import math.nb { zero };
 import cpu.common { regs, pc, mem, c0, invalid };
 import cpu.dpr { exec_dpr };
 import cpu.dpi { exec_dpi };
 import cpu.mem_ops { exec_mem };
+import cpu.branch { exec_branch, goto, next_address };
+import cpu.mem { read_mem_32 };
+import math.nb { zero };
+import math.comp { eq };
+import math.arith { add };
 symbol continue, end;
 
 let init_state = {
@@ -16,11 +20,14 @@ let init_state = {
 	c0 = 0,
 	mem = {},
 };
-fn run_iter (state) => [end, exec([0], state)];
+fn run_iter (state) => exec(read_mem_32(state, state.pc), state) 
+	|> eq(_.pc, state.pc): { 1 => goto(_, next_address(_)), _ => _ }
+	|> [_.pc: { zero => end, _ => continue }, _];
 
 fn exec (inst, state) => inst[0]: {
 	1 => exec_dpr(inst, state),
 	2 => exec_dpi(inst, state),
 	3 => exec_mem(inst, state),
+	4 => exec_branch(inst, state),
 	_ => invalid(state, inst),
 };

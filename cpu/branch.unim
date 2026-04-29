@@ -1,0 +1,50 @@
+import cpu.common { 
+	panic, pc, regs, dec_1reg, dec_2reg, dec_3reg, write_reg, read_cond,
+	s10_imd, s19_imd, s24_imd
+};
+import math.nb { zero, low1, high2 };
+import math.arith { add };
+import math.shift { shl, shift_l1 };
+
+fn exec_branch (inst, state) => inst[1]: {
+	0 => s24_imd(inst): {
+		zero => goto(state, zero),
+		let address => branch_to(state, address),
+	},
+	1 => read_cond(state, dec_1reg(inst[6], inst[7])): {
+		0 => state,
+		1 => branch_to(state, s19_imd(inst)),
+	},
+	2 => read_cond(state, dec_1reg(inst[6], inst[7])): {
+		1 => state,
+		0 => branch_to(state, s19_imd(inst)),
+	},
+	3 => write_reg(state, dec_1reg(inst[6], inst[7]), next_address(state))
+		|> branch_to(_, s19_imd(inst)),
+	4 => inst[2]: {
+		0 => [
+			dec_3reg(inst[4], inst[5], inst[6], inst[7]), dec_shift(high2(inst[3]), low1(inst[4]))
+		]: { [[let base, let index, let link], let sh] => 
+			write_reg(state, link, next_address(state))
+			|> goto(_, index: {
+				0 => state.regs[base],
+				1 => add(state.regs[base], shl(state.regs[index], [sh, 0])),
+			}), 
+		},
+		1 => [dec_2reg(inst[5], inst[6], inst[7]), s10_imd(inst)]: {
+			[[let base, let link], let offset] => write_reg(state, link, next_address(state))
+				|> goto(_, add(state.regs[base], shift_l1(offset, 0, 2))),
+		},
+		_ => panic()
+	},
+	_ => panic()
+};
+
+fn next_address (state) => add(state.pc, [4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+fn goto (state, address) => { ..state, pc = address };
+fn branch_to (state, offset) => { ..state, pc = add(state.pc, shift_l1(offset, 0, 2)) };
+
+fn dec_shift (low, high) => high: {
+	0 => low: { 0 => 2, 1 => 3, 2 => 4, 3 => 5 },
+	1 => low: { 0 => 6, 1 => 7, 2 => 8, 3 => 9 },
+};

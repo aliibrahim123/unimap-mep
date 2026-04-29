@@ -1,9 +1,8 @@
-import cpu.common { panic, regs, pc, write_reg, dec_2reg, dec_3reg, dec_1reg };
+import cpu.common { panic, regs, pc, write_reg, dec_2reg, dec_3reg, dec_1reg, s12_imd, s19_imd };
 import cpu.mem { 
 	read_mem_8, read_mem_16, read_mem_32, read_mem_64, 
 	write_mem_8, write_mem_16, write_mem_32, write_mem_64 
 };
-import cpu.dpi { s12_imd };
 import math.nb { low1, low2, high2,  bit_dg };
 import math.shift { shift_l1, sign_ext8, sign_ext16, sign_ext32 };
 import math.arith { add };
@@ -71,10 +70,4 @@ fn exec_rel (inst, state) => cal_adress(state.pc, s19_imd(inst), high2(inst[1]))
 fn cal_adress (base, offset, size) => size: {
 	0 => add(base, offset),
 	1 => add(base, shift_l1(offset, 0, size: { 0 => 3, 1 => 2, 2 => 1, 3 => 0 })),
-};
-
-fn s19_imd (inst) => bit_dg(inst[6], 2): {
-	0 => [inst[2], inst[3], inst[4], inst[5], low2(inst[6]), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-	1 => low2(inst[6]): { 0 => 15, 1 => 14, 2 => 13, 3 => 12 }
-		|> [inst[2], inst[3], inst[4], inst[5], _, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15]
 };
