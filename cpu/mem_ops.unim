@@ -1,0 +1,80 @@
+import cpu.common { panic, regs, pc, write_reg, dec_2reg, dec_3reg, dec_1reg };
+import cpu.mem { 
+	read_mem_8, read_mem_16, read_mem_32, read_mem_64, 
+	write_mem_8, write_mem_16, write_mem_32, write_mem_64 
+};
+import cpu.dpi { s12_imd };
+import math.nb { low1, low2, high2,  bit_dg };
+import math.shift { shift_l1, sign_ext8, sign_ext16, sign_ext32 };
+import math.arith { add };
+
+fn exec_mem (inst, state) => low2(inst[1]): {
+	0 => exec_imd(inst, state, 0),
+	1 => exec_imd(inst, state, 1),
+	3 => exec_rel(inst, state),
+	2 => high2(inst[1]): {
+		0 => inst[2]: {
+			0 => exec_index(inst, state),
+			_ => panic(),
+		},
+		_ => panic(),
+	},
+};
+
+fn access_mem (state, reg, address, op, size) => op: {
+	0 => size: {
+		0 => read_mem_64(state, address),
+		1 => read_mem_32(state, address),
+		2 => read_mem_16(state, address),
+		3 => read_mem_8(state, address),
+	} |> write_reg(state, reg, _),
+	1 => state.regs[reg] |> size: {
+		0 => write_mem_64(state, address, _),
+		1 => write_mem_32(state, address, _),
+		2 => write_mem_16(state, address, _),
+		3 => write_mem_8(state, address, _),
+	},
+	2 => size: {
+		0 => panic(),
+		1 => read_mem_32(state, address) |> sign_ext32(_),
+		2 => read_mem_16(state, address) |> sign_ext16(_),
+		3 => read_mem_8(state, address)  |> sign_ext8(_),
+	} |> write_reg(state, reg, _),
+	3 => panic(),
+};
+
+fn exec_imd (inst, state, writeback) =>[dec_2reg(inst[2], inst[3], inst[4]), s12_imd(inst)]: {
+	[[let reg, let base], let imd] => cal_adress(state.regs[base], imd, low2(inst[2])): {
+		let address => access_mem(state, reg, address, high2(inst[1]), low2(inst[2]))
+		|> writeback: {
+			0 => _,
+			1 => write_reg(_, base, address)
+		}
+	}
+};
+
+fn exec_index (inst, state) => dec_3reg(inst[4], inst[5], inst[6], inst[7]): {
+	[let reg, let base, let index] => cal_adress(state.regs[base], state.regs[index], 
+		low1(inst[4]): { 0 => 0, 1 => high2(inst[3]) }
+	) |> access_mem(state, reg, _, low2(inst[3]), high2(inst[3]))
+};
+
+fn exec_rel (inst, state) => cal_adress(state.pc, s19_imd(inst), high2(inst[1])) 
+	|> high2(inst[1]): {
+		0 => read_mem_64(state, _),
+		1 => read_mem_32(state, _),
+		2 => read_mem_16(state, _),
+		3 => read_mem_8(state, _),
+	} 
+	|> write_reg(state, dec_1reg(inst[6], inst[7]), _);
+
+fn cal_adress (base, offset, size) => size: {
+	0 => add(base, offset),
+	1 => add(base, shift_l1(offset, 0, size: { 0 => 3, 1 => 2, 2 => 1, 3 => 0 })),
+};
+
+fn s19_imd (inst) => bit_dg(inst[6], 2): {
+	0 => [inst[2], inst[3], inst[4], inst[5], low2(inst[6]), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+	1 => low2(inst[6]): { 0 => 15, 1 => 14, 2 => 13, 3 => 12 }
+		|> [inst[2], inst[3], inst[4], inst[5], _, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15]
+};

@@ -2,6 +2,7 @@ import math.nb { zero };
 import cpu.common { regs, pc, mem, c0, invalid };
 import cpu.dpr { exec_dpr };
 import cpu.dpi { exec_dpi };
+import cpu.mem_ops { exec_mem };
 symbol continue, end;
 
 let init_state = {
@@ -20,5 +21,6 @@ fn run_iter (state) => [end, exec([0], state)];
 fn exec (inst, state) => inst[0]: {
 	1 => exec_dpr(inst, state),
 	2 => exec_dpi(inst, state),
+	3 => exec_mem(inst, state),
 	_ => invalid(state, inst),
 };
