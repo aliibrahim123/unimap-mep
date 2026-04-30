@@ -13,19 +13,19 @@ fn exec_branch (inst, state) => inst[1]: {
 		zero => goto(state, zero),
 		let address => branch_to(state, address),
 	},
+	// br link:reg, offset:s19_imd
+	1 => write_reg(state, dec_1reg(inst[6], inst[7]), next_address(state))
+		|> branch_to(_, s19_imd(inst)),
 	// br.cond cond:reg, offset:s19_imd
-	1 => read_cond(state, dec_1reg(inst[6], inst[7])): {
+	2 => read_cond(state, dec_1reg(inst[6], inst[7])): {
 		0 => state,
 		1 => branch_to(state, s19_imd(inst)),
 	},
 	// br.cond.n cond:reg, offset:s19_imd
-	2 => read_cond(state, dec_1reg(inst[6], inst[7])): {
+	3 => read_cond(state, dec_1reg(inst[6], inst[7])): {
 		1 => state,
 		0 => branch_to(state, s19_imd(inst)),
 	},
-	// br link:reg, offset:s19_imd
-	3 => write_reg(state, dec_1reg(inst[6], inst[7]), next_address(state))
-		|> branch_to(_, s19_imd(inst)),
 	4 => inst[2]: {
 		// jmp link:reg, [base:reg + index:reg << shift:u3_imd]
 		0 => [
