@@ -1,5 +1,5 @@
 import cpu.common { 
-	invalid, panic, regs, read_cond, write_reg, write_cond, dec_1reg, dec_3reg, dec_2reg, u2u4_u6,
+	invalid, panic, pc, regs, read_cond, write_reg, write_cond, dec_1reg, dec_3reg, dec_2reg, u2u4_u6,
 	imd_6_6, logic_imd, s12_imd, u12_imd
 };
 import math.nb { zero, low1, low2, mid2, high1, high2, bit_dg, n_ones };
@@ -21,8 +21,11 @@ fn exec_dpi (inst, state) => inst[1]: {
 
 fn exec_arith (inst, state) => [dec_2reg(inst[2], inst[3], inst[4]), u12_imd(inst)]: {
 	[[let dst, let src1], let src2] => low2(inst[2]): {
-		0 => add(state.regs[src1], src2),
+		// add dst:reg, src1:reg_pc, src2:u12_imd
+		0 => add(src1: { 0 => state.pc, _ => state.regs[src1] }, src2),
+		// sub dst:reg, src1:reg, src2:u12_imd
 		1 => sub(state.regs[src1], src2),
+		// sub dst:reg, src1:u12_imd, src2:reg
 		2 => sub(src2, state.regs[src1]),
 		3 => invalid(state, inst)
 	} |> write_reg(state, dst, _)
@@ -31,19 +34,27 @@ fn exec_arith (inst, state) => [dec_2reg(inst[2], inst[3], inst[4]), u12_imd(ins
 fn exec_logic (inst, state) => [dec_2reg(inst[2], inst[3], inst[4]), logic_imd(inst)]: {
 	[[let dst, let src1], let src2] => inst[1]: {
 		0 => low1(inst[2]): {
+			// and dst:reg, src1:reg, src2:logic_imd
 			0 => and(state.regs[src1], src2),
+			// or dst:reg, src1:reg, src2:logic_imd
 			1 => or(state.regs[src1], src2),
 		},
 		1 => low1(inst[2]): {
+			// xor dst:reg, src1:reg, src2:logic_imd
 			0 => xor(state.regs[src1], src2),
+			// imply dst:reg, src1:reg, src2:logic_imd
 			1 => imply(state.regs[src1], src2),
 		},
 		2 => low1(inst[2]): {
+			// nand dst:reg, src1:reg, src2:logic_imd
 			0 => nand(state.regs[src1], src2),
+			// nor dst:reg, src1:reg, src2:logic_imd
 			1 => nor(state.regs[src1], src2),
 		},
 		3 => low1(inst[2]): {
+			// xnor dst:reg, src1:reg, src2:logic_imd
 			0 => xnor(state.regs[src1], src2),
+			// bcr dst:reg, src1:reg, src2:logic_imd
 			1 => bcr(state.regs[src1], src2),
 		},
 	} |> write_reg(state, dst, _)
@@ -52,14 +63,20 @@ fn exec_logic (inst, state) => [dec_2reg(inst[2], inst[3], inst[4]), logic_imd(i
 fn exec_comp (inst, state) => dec_2reg(inst[2], inst[3], inst[4]): {
 	[let dst, let src1] => inst[1]: {
 		5 => low1(inst[2]): {
+			// comp.eq cond:reg, src1:reg, src2:s12_imd
 			0 => eq(state.regs[src1], s12_imd(inst)),
+			// comp.ne cond:reg, src1:reg, src2:s12_imd
 			1 => ne(state.regs[src1], s12_imd(inst)),
 		},
 		6 => low1(inst[2]): {
+			// comp.gt cond:reg, src1:reg, src2:s12_imd
 			0 => comp(state.regs[src1], s12_imd(inst)): { 2 => 1, _ => 0 },
+			// ucomp.gt cond:reg, src1:reg, src2:s12_imd
 			1 => ucomp(state.regs[src1], u12_imd(inst)): { 2 => 1, _ => 0 },
 		},
-	} |> bit_dg(inst[2], 1): {
+	} 
+	// write / and cond
+	|> bit_dg(inst[2], 1): {
 		0 => write_cond(state, dst, _),
 		1 => and1(read_cond(state, dst), _) |> write_cond(state, dst, _),
 	}
@@ -67,24 +84,31 @@ fn exec_comp (inst, state) => dec_2reg(inst[2], inst[3], inst[4]): {
 
 fn exec_bit_test (inst, state) => [dec_2reg(inst[2], inst[3], inst[4]), logic_imd(inst)]: {
 	[[let dst, let src1], let imd] => inst[1]: {
+		// test.none cond:reg, src:reg, mask:logic_imd
 		7 => eq(and(state.regs[src1], imd), zero),
+		// test.any cond:reg, src:reg, mask:logic_imd
 		8 => ne(and(state.regs[src1], imd), zero),
+		// test.all cond:reg, src:reg, mask:logic_imd
 		9 => eq(and(state.regs[src1], imd), imd),
-	} |> low1(inst[2]): {
+	} 
+	// write / and cond
+	|> low1(inst[2]): {
 		0 => write_cond(state, dst, _),
 		1 => and1(read_cond(state, dst), _) |> write_cond(state, dst, _),
 	}
 };
 
+// sel dst:reg, cond:reg, src1:reg, src2:s9_imd
 fn exec_select(inst, state) => dec_3reg(inst[2], inst[3], inst[4], inst[5]): {
-	[let dst, let src1, let src2] => low1(inst[2]): {
+	[let dst, let cond, let src1] => low1(inst[2]): {
 		0 => [inst[6], inst[7],  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
 		1 => [inst[6], inst[7], 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15],
 	} 
-	|> read_cond(state, src1): { 1 => state.regs[src2], 0 => _ }
+	|> read_cond(state, cond): { 1 => state.regs[src1], 0 => _ }
 	|> write_reg(state, dst, _)
 };
 
+// mov.wide dst:reg, src:u16_imd, sh:u2_imd
 fn exec_mov (inst, state) => [dec_1reg(inst[2], inst[3]), mid2(inst[2])]: {
 	[let dst, let sh] => shift16(inst[4], inst[5], inst[6], inst[7], sh)
 	|> low1(inst[2]): {
@@ -95,7 +119,9 @@ fn exec_mov (inst, state) => [dec_1reg(inst[2], inst[3]), mid2(inst[2])]: {
 
 fn exec_bitfield (inst, state) => [dec_2reg(inst[2], inst[3], inst[4]), imd_6_6(inst)]: {
 	[[let dst, let src1], [let offset, let width]] => low2(inst[2]): {
+		// bfext dst:reg, src:reg, offset:u6_imd, width:u6_imd
 		0 => bitfield_extract(state.regs[src1], offset, width),
+		// bfins dst:reg, src:reg, offset:u6_imd, width:u6_imd
 		1 => bitfield_insert(state.regs[src1], state.regs[dst], offset, width),
 	} |> write_reg(state, dst, _)
 };

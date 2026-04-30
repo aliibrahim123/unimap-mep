@@ -8,11 +8,15 @@ import math.shift { shift_l1, sign_ext8, sign_ext16, sign_ext32 };
 import math.arith { add };
 
 fn exec_mem (inst, state) => low2(inst[1]): {
+	// op.size reg, [base:reg + offset:s12_imd]
 	0 => exec_imd(inst, state, 0),
+	// op.size reg, [base:reg += offset:s12_imd]
 	1 => exec_imd(inst, state, 1),
+	// ld{, .32, .16, .8} reg, [offset:s19_imd]
 	3 => exec_rel(inst, state),
 	2 => high2(inst[1]): {
 		0 => inst[2]: {
+			// op.size reg, [base:reg + index:reg << (0 | (3-sz)]
 			0 => exec_index(inst, state),
 			_ => panic(),
 		},
@@ -22,21 +26,32 @@ fn exec_mem (inst, state) => low2(inst[1]): {
 
 fn access_mem (state, reg, address, op, size) => op: {
 	0 => size: {
+		// ld 
 		0 => read_mem_64(state, address),
+		// ld.32
 		1 => read_mem_32(state, address),
+		// ld.16
 		2 => read_mem_16(state, address),
+		// ld.8
 		3 => read_mem_8(state, address),
 	} |> write_reg(state, reg, _),
 	1 => state.regs[reg] |> size: {
+		// st
 		0 => write_mem_64(state, address, _),
+		// st.32
 		1 => write_mem_32(state, address, _),
+		// st.16
 		2 => write_mem_16(state, address, _),
+		// st.8
 		3 => write_mem_8(state, address, _),
 	},
 	2 => size: {
 		0 => panic(),
+		// ld.s32
 		1 => read_mem_32(state, address) |> sign_ext32(_),
+		// ld.s16
 		2 => read_mem_16(state, address) |> sign_ext16(_),
+		// ld.s8
 		3 => read_mem_8(state, address)  |> sign_ext8(_),
 	} |> write_reg(state, reg, _),
 	3 => panic(),
