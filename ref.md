@@ -37,3 +37,206 @@ all fundamental data types is stored in memory in little endian order and must b
 mep is a load store architecture, all memory accesses are performed only by `ld` and `st` instructions.
 
 # assembly language
+the assembly language is a human readable form of mep executable code.
+## basic syntax
+this section uses the [gramex meta language](https://docs.rs/gramex/latest/gramex/docs/gram_ref/index.html), and except the file to be valid utf-8.
+
+whitespace are insignificant, they are only used to separate tokens, the whitespace characters are: space ` `, horizontal tab `\t`, and carriage return `\r`.
+
+line feed `\n` is used as separater between instructions.
+
+#### comments
+```gramex
+let comment = "//" !"\n"* "\n"? | "/*" !"*/"* "*/";
+```
+mep assembly supports line and block comments with their respective c style syntax.
+
+they are ignored by the parser, and dont provide any semantic meaning.
+
+#### identifiers
+```gramex
+let ident = ("a".."z" | "A".."Z") ("a".."z" | "A".."Z" | "0".."9" | "_")*;
+```
+identifiers are used as name for instructions, registers, labels and constants.
+
+#### numbers
+```gramex
+let hex_dg = "0".."9" | "a".."f" | "A".."F";
+let nb = "0b" ("0" | "1") ("_"? ("0" | "1"))* | "0x" hex_dg ("_"? hex_dg)* | "0".."9" ("_"? "0".."9")*;
+```
+numbers are unsigned integers used as offsets, immediate and constants.
+
+they can be written in decimal, binary or hexadecimal, with optional `_` as separator for readability.
+
+## top level structure
+```gramex
+let file = list<label_decl? (inst | const), "\n"+>
+```
+an assembly file consist of instructions and constants separated by new lines, each instruction or constant can be prefixed with a label.
+
+the assembler encode each instruction and constant into its binary form, then lay them after each other starting at address 0.
+
+### labels
+```gramex
+let label_decl = ident ":"
+```
+labels are used to reference an instruction or constant by name inside immediates and offsets.
+
+they resolve to the offset of the referenced item from the current instruction.
+
+## instructions
+```gramex
+let mnemonic = list<ident, ".">;
+let inst = mnemonic list<oprand, ",">?;
+```
+an instruction consists of its mnemonic followed by its operands.
+
+instruction mnemonics can be upper or lower case, they are composed of a `.` separated list of identifiers.
+
+each instruction can have 0 or more operands separated by `,`.
+
+### instruction discription
+```gramex
+let inst_disc = mnemonic list<ident "?"? ":" oprand_type, ",">?;
+```
+instruction discriptions found in this document are composed of the intruction mnemonic followed by its operands discription separated by `,`.
+
+an oprand discription consist of the oprand identifier followed by its type, an oprand is optional is its identifier is suffixed with `?`.
+
+### opreands
+```gramex
+let oprand = reg | sh_reg | imd | label | address;
+let oprand_type = reg_type | "sh_reg" | imd_type | address_type; 
+```
+an oprand encodes a storage location, values or options the instruction take / perform on.
+
+oprands come in different forms, they can registers, immediates, memory locations and labels.
+
+### register oprands
+```gramex
+let gpr = ("r" | "R")("0".."9" | ("1" | "2") "0".."9" | "30" | "31");
+let pc = "pc" | "PC";
+let c0 = "c0" | "C0";
+let reg = gpr | pc | c0;
+let reg_type = "gpr" | "cond" | "gpr_pc";
+```
+register oprands are the most common oprand types, they come in different types:
+- `gpr`: any general purpose registers.
+- `cond`: register holding a condition, `C0` and any general purpose registers except `R0`.
+- `gpr_pc`: `PC` and any general purpose registers except `R0`.
+
+register names can be upper or lower.
+
+### shifted register oprands
+```gramex
+let sh_reg = gpr | gpr ("shl" | "shr" | "sar" | "rol" | "SHL" | "SHR" | "SAR" | "ROL) nb; 
+```
+shifted register oprands are general purpose registers shifted by a constant encoded in a 6 bit immediate.
+
+the supported shifts are logical left (`shl`), logical right (`shr`), arithmetic right (`sar`), and rotate left (`rol`).
+
+the shift part can be omitted, resulting in `shl 0`.
+
+### immediate oprands
+```gramex
+let imd = ("+" | "-")? nb | logic_imd;
+let imd_type = "u6_imd" | "u12_imd" | "s9_imd" | "s10_imd" | "s12_imd" | "s19_imd" | "s24_imd" | "logic_imd";
+```
+immediate oprands are integer literals that get encoded directly into the instructions.
+
+they can be unsigned or unsigned and of different sizes.
+
+the sign is forbidden for unsigned immediates and required for signed ones.
+
+the available sizes are:
+- for unsigned immediates: 6 bits (`u6_imd`) and 12 bits (`u12_imd`).
+- for signed immediates: 9 bits (`s9_imd`), 10 bits (`s10_imd`), 12 bits (`s12_imd`), 19 bits (`s19_imd`) and 24 bits (`s24_imd`).
+
+some immediates (specifically addresses) are scalled by the data width, meaning that the immediate must be multiple of the data width, then the assembler will shift the immediate before insertion.
+
+#### logic immediate
+```gramex
+let logic_imd_level = "2" | "4" | "8" | "16" | "32" | "64";
+let logic_imd = "logic_imd" "(" (logic_imd_level ",")? nb "," nb ")";
+```
+logic immediate (`logic_imd`) are specific immediate for the logical operations.
+
+it is created by a macro called `logic_imd(level? = 64, one_len, rot)` that creates a `one_len` sized sequence of `1` from low, then left rotate it by `rot`.
+
+`logic_imd` macro also take an optional `level` where the pattern width is `level`, then it is repeated to be a 64 bit word.
+
+### label oprands
+```gramex
+let label = ident;
+```
+label oprands encode their respective label as an immediate.
+
+they can be used inside any immediate oprand that can fit the label offset.
+
+### address oprands
+```gramex
+let base_offset = gpr ("+" | "-") "="? nb;
+let base_index = gpr | gpr "+" gpr (("shl" | "SHL") nb)?;
+let address = "[" (imd | label | base_offset | base_index) "]";
+let address_type = "offset" | "base_offset" | "base_index";
+```
+address oprands encodes a memory address used in loads, stores and branches.
+
+address oprands are composed of an address formula enclosed around square brackets, these formulas can be: 
+- **offset**: a scaled immediate or a label.
+- **base + offset**: a general purpose register plus a scaled immediate.
+- **base + index**: a general purpose register plus an optionally shifted general purpose register.
+
+the offset and shift sizes are determined by each individual instruction. 
+
+## constants
+```gramex
+let const = unsigned_nb_const | signed_nb_const | byte_arr_const | str_const;
+```
+a constant is a value that gets encoded into the binary at the current.
+
+a constant can be put anywhere in the file, and can span any length, however it will be aligned like required.
+
+the assembler will insert padding bytes after a constant to align the next instruction after it.
+
+a constant is composed of its type followed by its value, constant types are:
+- **`u8`, `u16`, `u32`, `u64`**: unsigned number.
+- **`i8`, `i16`, `i32`, `i64`**: signed number.
+- **`bytes`**: byte array.
+- **`str`**: string.
+
+### unsigned numbers constants
+```gramex
+let unsigned_nb_const = ("u8" | "u16" | "u32" | "u64") nb;
+```
+unsigned numbers constants are unsigned 8, 16, 32 or 64 bits integer literals that get encoded into their binary form.
+
+### signed numbers constants
+```gramex
+let signed_nb_const = ("i8" | "i16" | "i32" | "i64") ("-" | "+")? nb;
+```
+signed numbers constants are signed 8, 16, 32 or 64 bits integer literals that get encoded into their binary form.
+
+### byte array constants
+```gramex
+let byte_arr_const = "bytes" list<"\n"* nb, ",">;
+```
+byte array constants are comma separated array of bytes that get encoded in little endian order.
+
+a newline can be used to separate the array into multiple lines, required to have a comma at the end of each line.
+
+### string constants
+```gramex
+let escape_code = "\\" ("n" | "r" | "t" | "\"" | "\\" | "x" hex_dg hex_dg | "u{" hex_dg+ "}");
+let str_const = "str" "\"" list<escape_code | !"\\"">* "\"";
+```
+string constants are utf-8 encoded strings that get encoded into their binary form.
+
+strings are double quoted and can have the following escape sequences:
+- `\n` newline.
+- `\r` carriage return.
+- `\t` horizontal tab.
+- `\"` double quote.
+- `\\` backslash.
+- `\xhh` hex encoded character.
+- `\u{ccc}` unicode character code.

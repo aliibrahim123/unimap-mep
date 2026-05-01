@@ -70,20 +70,24 @@ fn exec_shift (inst, state) => [
 fn exec_3regs (inst, state) => dec_3reg(inst[4], inst[5], inst[6], inst[7]): {
 	[let dst, let src1, let src2] => inst[2]: {
 		0 => inst[3]: {
+			// shr dst:reg, src:reg, amount:reg
+			0 => shr(state.regs[src1], mod64(state.regs[src2])),
+			// sar dst:reg, src:reg, amount:reg
+			1 => sar(state.regs[src1], mod64(state.regs[src2])),
 			// min dst:reg, src1:reg, src2:reg
-			0 => min(state.regs[src1], state.regs[src2]),
+			2 => min(state.regs[src1], state.regs[src2]),
 			// max dst:reg, src1:reg, src2:reg
-			1 => max(state.regs[src1], state.regs[src2]),
+			3 => max(state.regs[src1], state.regs[src2]),
 			// umin dst:reg, src1:reg, src2:reg
-			2 => umin(state.regs[src1], state.regs[src2]),
+			4 => umin(state.regs[src1], state.regs[src2]),
 			// umax dst:reg, src1:reg, src2:reg
-			3 => umax(state.regs[src1], state.regs[src2]),
+			5 => umax(state.regs[src1], state.regs[src2]),
 			// cnot dst:reg, cond:reg, src:reg
-			4 => state.regs[src2] |> read_cond(state, src1): { 1 => not(_), 0 => _ },
+			6 => state.regs[src2] |> read_cond(state, src1): { 1 => not(_), 0 => _ },
 			// cinc dst:reg, cond:reg, src:reg
-			5 => state.regs[src2] |> read_cond(state, src1): { 1 => add(_, one), 0 => _ },
+			7 => state.regs[src2] |> read_cond(state, src1): { 1 => add(_, one), 0 => _ },
 			// cneg dst:reg, cond:reg, src:reg
-			6 => state.regs[src2] |> read_cond(state, src1): { 1 => negate(_), 0 => _ },
+			8 => state.regs[src2] |> read_cond(state, src1): { 1 => negate(_), 0 => _ },
 			_ => invalid(state, inst)
 		} |> write_reg(state, dst, _),
 
