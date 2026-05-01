@@ -167,7 +167,7 @@ comp.eq c0, r1, r2
 add r3, PC, +4
 ```
 
-## shifted register oprands
+### shifted register oprands
 ```gramex
 let sh_reg = gpr | gpr ("shl" | "shr" | "sar" | "rol" | "SHL" | "SHR" | "SAR" | "ROL) nb; 
 ```
@@ -203,7 +203,7 @@ comp.eq c0, r3, +10
 br +0x14
 ```
 
-#### logic immediate
+### logic immediate
 ```gramex
 let logic_imd_level = "2" | "4" | "8" | "16" | "32" | "64";
 let logic_imd = "logic_imd" "(" (logic_imd_level ",")? nb "," nb ")";
@@ -329,7 +329,7 @@ hello: str "hello world"
 # instruction format
 instructions in mep are fixed 32 bit long, composed into multiple fields.
 
-these fields starts from the least significant bit, and can be opcodes, registers, immediate and options.
+these fields are structured from the least significant bit, and can be opcodes, registers, immediate and options / flags.
 
 ### registers
 registers are encoded inside 5 bit fields called `gpr` based on their index.
@@ -357,3 +357,59 @@ the immediates fields with their fields are:
 - for signed immediates: `s9_imd` (9 bits), `s10_imd` (10 bits), `s12_imd` (12 bits), `s19_imd` (19 bits) and `s24_imd` (24 bits).
 
 signed immediates are encoded in twos complement, and all immediates are contiguous inside the instruction except for `s9_imd` where the sign bit is encoded separately.
+
+### shifted register
+some instructions take a shifted register oprand, it is encoded in 3 fields: a `gpr` for the register, a `u6_imd` for the shift amount and a `sh` that specifies the shift type.
+
+`sh` is a 2 bit field that can be one of:
+- `00`: logical left (`shl`)
+- `01`: logical right (`shr`)
+- `10`: arithmetic right (`sar`)
+- `11`: rotate left (`rol`)
+
+# arithmatic instructions
+## addictive instructions
+### add (shifted register)
+```
+add dst:gpr, src1:gpr, src2:sh_reg
+```
+![add encoding](./ref-assets/add.svg)
+
+adds register `src1` and optionally shifted register `src2` and stores the result in `dst` register.
+
+### add (immediate)
+```
+add dst:gpr, src1:gpr_pc, src2:u12_imd
+```
+![add imd encoding](./ref-assets/add_imd.svg)
+
+adds register / `PC` (`src1`) and immediate `src2` and stores the result in `dst` register.
+
+### add.carry
+```
+add.carry dst:gpr, src1:gpr, src2:gpr, carry:cond
+```
+![add.carry encoding](./ref-assets/add_carry.svg)
+
+adds registers `src1` and `src2` with carry flag in `carry` register and stores the result in `dst` register, then updates the `carry` register.
+
+### add tripple
+```
+add dst:gpr, src1:gpr, src2:gpr, src3:gpr
+```
+![add3 encoding](./ref-assets/add3.svg)
+
+adds registers `src1`, `src2` and `src3` and stores the result in `dst` register.
+
+
+# sign processing instructions
+
+# logical instructions
+
+# bit manipulation instructions
+
+# data movement instructions
+
+# load / store instructions
+
+# control flow instructions
