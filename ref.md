@@ -68,6 +68,10 @@ numbers are unsigned integers used as offsets, immediate and constants.
 
 they can be written in decimal, binary or hexadecimal, with optional `_` as separator for readability.
 
+```
+123 0b1001_0101 0xff_AA
+```
+
 ## top level structure
 ```gramex
 let file = list<label_decl? (inst | const), "\n"+>
@@ -76,6 +80,15 @@ an assembly file consist of instructions and constants separated by new lines, e
 
 the assembler encode each instruction and constant into its binary form, then lay them after each other starting at address 0.
 
+```
+start: 
+	ld.u8 r1, [one]
+	mov r2, 2
+	add r3, r1, r2
+
+one: u8 0x01;
+```
+
 ### labels
 ```gramex
 let label_decl = ident ":"
@@ -83,6 +96,12 @@ let label_decl = ident ":"
 labels are used to reference an instruction or constant by name inside immediates and offsets.
 
 they resolve to the offset of the referenced item from the current instruction.
+
+```
+data: u32 0x12345678
+loop_start: 
+	ld.u32 r1, [data]
+```
 
 ## instructions
 ```gramex
@@ -95,6 +114,10 @@ instruction mnemonics can be upper or lower case, they are composed of a `.` sep
 
 each instruction can have 0 or more operands separated by `,`.
 
+```
+add r3, r1, r2
+```
+
 ### instruction discription
 ```gramex
 let inst_disc = mnemonic list<ident "?"? ":" oprand_type, ",">?;
@@ -102,6 +125,10 @@ let inst_disc = mnemonic list<ident "?"? ":" oprand_type, ",">?;
 instruction discriptions found in this document are composed of the intruction mnemonic followed by its operands discription separated by `,`.
 
 an oprand discription consist of the oprand identifier followed by its type, an oprand is optional is its identifier is suffixed with `?`.
+
+```
+add dst:gpr, src1:gpr, src2:u12_imd
+```
 
 ### opreands
 ```gramex
@@ -111,6 +138,13 @@ let oprand_type = reg_type | "sh_reg" | imd_type | address_type;
 an oprand encodes a storage location, values or options the instruction take / perform on.
 
 oprands come in different forms, they can registers, immediates, memory locations and labels.
+
+```
+add r3, r1, r2 shl 3
+comp.eq c0, r3, +10
+br.true c0, case_1
+ld r4, [r1 += 0x10]
+```
 
 ### register oprands
 ```gramex
@@ -127,7 +161,13 @@ register oprands are the most common oprand types, they come in different types:
 
 register names can be upper or lower.
 
-### shifted register oprands
+```
+add r3, R1, r2
+comp.eq c0, r1, r2
+add r3, PC, +4
+```
+
+## shifted register oprands
 ```gramex
 let sh_reg = gpr | gpr ("shl" | "shr" | "sar" | "rol" | "SHL" | "SHR" | "SAR" | "ROL) nb; 
 ```
@@ -137,6 +177,11 @@ the supported shifts are logical left (`shl`), logical right (`shr`), arithmetic
 
 the shift part can be omitted, resulting in `shl 0`.
 
+```
+add r3, r1, r2 shl 4
+or r4, r1, r3 rol 31
+```
+
 ### immediate oprands
 ```gramex
 let imd = ("+" | "-")? nb | logic_imd;
@@ -144,26 +189,35 @@ let imd_type = "u6_imd" | "u12_imd" | "s9_imd" | "s10_imd" | "s12_imd" | "s19_im
 ```
 immediate oprands are integer literals that get encoded directly into the instructions.
 
-they can be unsigned or unsigned and of different sizes.
-
-the sign is forbidden for unsigned immediates and required for signed ones.
-
-the available sizes are:
+they can be unsigned or unsigned and of different sizes, the available sizes are:
 - for unsigned immediates: 6 bits (`u6_imd`) and 12 bits (`u12_imd`).
 - for signed immediates: 9 bits (`s9_imd`), 10 bits (`s10_imd`), 12 bits (`s12_imd`), 19 bits (`s19_imd`) and 24 bits (`s24_imd`).
 
-some immediates (specifically addresses) are scalled by the data width, meaning that the immediate must be multiple of the data width, then the assembler will shift the immediate before insertion.
+the sign is forbidden for unsigned immediates and required for signed ones.
+
+some immediates (specifically addresses) are scalled by the data width, meaning that the immediate must be multiple of the data width, then the assembler will shift the immediate down before insertion.
+
+```
+add r3, r2, 10
+comp.eq c0, r3, +10
+br +0x14
+```
 
 #### logic immediate
 ```gramex
 let logic_imd_level = "2" | "4" | "8" | "16" | "32" | "64";
 let logic_imd = "logic_imd" "(" (logic_imd_level ",")? nb "," nb ")";
 ```
-logic immediate (`logic_imd`) are specific immediate for the logical operations.
+logic immediate (`logic_imd`) are specific bitmask immediates for the logical operations.
 
-it is created by a macro called `logic_imd(level? = 64, one_len, rot)` that creates a `one_len` sized sequence of `1` from low, then left rotate it by `rot`.
+they are created by the macro `logic_imd(level?, one_len, rot)` that creates a continuous sequence of `1` of len `one_len` from low, then left rotate it by `rot`.
 
-`logic_imd` macro also take an optional `level` where the pattern width is `level`, then it is repeated to be a 64 bit word.
+`logic_imd` macro also takes an optional pattern width (`level`, default is `64`) where the pattern get repeated to be fill a 64 bit word.
+
+```
+and r3, r1, logic_imd(16, 8) // r3 = r1 & 0xffff00
+test.any c0, r3, logic_imd(48, 16) // test 16 bit overflow in r3
+```
 
 ### label oprands
 ```gramex
@@ -172,6 +226,11 @@ let label = ident;
 label oprands encode their respective label as an immediate.
 
 they can be used inside any immediate oprand that can fit the label offset.
+
+```
+br case_1
+ld r1, [data]
+```
 
 ### address oprands
 ```gramex
@@ -184,10 +243,17 @@ address oprands encodes a memory address used in loads, stores and branches.
 
 address oprands are composed of an address formula enclosed around square brackets, these formulas can be: 
 - **offset**: a scaled immediate or a label.
-- **base + offset**: a general purpose register plus a scaled immediate.
+- **base + offset**: a general purpose register plus a scaled immediate, if the sign is suffixed with `=`, the base register is updated with the computed address afterwards.
 - **base + index**: a general purpose register plus an optionally shifted general purpose register.
 
 the offset and shift sizes are determined by each individual instruction. 
+
+```
+ld r1, [+0x10]
+ld r1, [r2]
+ld r1, [r2 + 0x10]
+ld r1, [r2 + r3 shl 2]
+```
 
 ## constants
 ```gramex
@@ -211,11 +277,20 @@ let unsigned_nb_const = ("u8" | "u16" | "u32" | "u64") nb;
 ```
 unsigned numbers constants are unsigned 8, 16, 32 or 64 bits integer literals that get encoded into their binary form.
 
+```
+ff: u8 0xff
+data: u32 0x12345678
+```
+
 ### signed numbers constants
 ```gramex
 let signed_nb_const = ("i8" | "i16" | "i32" | "i64") ("-" | "+")? nb;
 ```
 signed numbers constants are signed 8, 16, 32 or 64 bits integer literals that get encoded into their binary form.
+
+```
+minus_one: i32 -1
+```
 
 ### byte array constants
 ```gramex
@@ -224,6 +299,12 @@ let byte_arr_const = "bytes" list<"\n"* nb, ",">;
 byte array constants are comma separated array of bytes that get encoded in little endian order.
 
 a newline can be used to separate the array into multiple lines, required to have a comma at the end of each line.
+
+```
+data: bytes 
+	0x01, 0x02, 0x03, 0x04,
+	0x05, 0x06, 0x07, 0x08
+```
 
 ### string constants
 ```gramex
@@ -240,3 +321,7 @@ strings are double quoted and can have the following escape sequences:
 - `\\` backslash.
 - `\xhh` hex encoded character.
 - `\u{ccc}` unicode character code.
+
+```
+hello: str "hello world"
+```
