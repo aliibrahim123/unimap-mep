@@ -35,7 +35,7 @@
   <text x="535.9375" y="50" class="content-fixed">1</text>
   <text x="557.8125" y="50" class="content-fixed">0</text>
   <text x="579.6875" y="50" class="content-fixed">0</text>
-  <text x="601.5625" y="50" class="content-fixed">0</text>
+  <text x="601.5625" y="50" class="content-fixed">1</text>
   <rect x="481.25" y="25" width="43.75" height="40" class="box-line" />
   <text x="485.25" y="15" text-anchor="start" class="bit-idx">9</text>
   <text x="521" y="15" text-anchor="end" class="bit-idx">8</text>

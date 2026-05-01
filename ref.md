@@ -368,7 +368,7 @@ some instructions take a shifted register oprand, it is encoded in 3 fields: a `
 - `11`: rotate left (`rol`)
 
 # arithmatic instructions
-## addictive instructions
+## addition
 ### add (shifted register)
 ```
 add dst:gpr, src1:gpr, src2:sh_reg
@@ -401,6 +401,138 @@ add dst:gpr, src1:gpr, src2:gpr, src3:gpr
 
 adds registers `src1`, `src2` and `src3` and stores the result in `dst` register.
 
+## subtract
+### sub (shifted register)
+```
+sub dst:gpr, src1:gpr, src2:sh_reg
+```
+![sub encoding](./ref-assets/sub.svg)
+
+subtracts optionally shifted register `src2` from register `src1` and stores the result in `dst` register.
+
+### sub reverse (shifted register)
+```
+sub dst:gpr, src1:sh_reg, src2:gpr
+```
+![sub rev encoding](./ref-assets/sub_rev.svg)
+
+subtracts register `src2` from optionally shifted register `src1` and stores the result in `dst` register.
+
+### sub (immediate)
+```
+sub dst:gpr, src1:gpr, src2:u12_imd
+```
+![sub imd encoding](./ref-assets/sub_imd.svg)
+
+subtracts immediate `src2` from register `src1` and stores the result in `dst` register.
+
+### sub reverse (immediate)
+```
+sub dst:gpr, src1:u12_imd, src2:gpr
+```
+![sub rev imd encoding](./ref-assets/sub_rev_imd.svg)
+
+subtracts register `src2` from immediate `src1` and stores the result in `dst` register.
+
+### sub.borrow
+```
+sub.borrow dst:gpr, src1:gpr, src2:gpr, borrow:cond
+```
+![sub.borrow encoding](./ref-assets/sub_borrow.svg)
+
+subtracts register `src2` from `src1` with borrow flag in `borrow` register and stores the result in `dst` register, then updates the `borrow` register.
+
+## multiplication
+### mult
+```
+mult dst:gpr, src1:gpr, src2:gpr
+```
+![mult encoding](./ref-assets/mult.svg)
+
+multiplies registers `src1` by `src2` and stores the result in `dst` register.
+
+it is an alias for `mult.full`
+
+### mult full
+```
+mult.full plow:gpr, phigh:gpr, src1:gpr, src2:gpr
+```
+![mult.full encoding](./ref-assets/mult_full.svg)
+
+multiplies registers `src1` by `src2` to produce a full 128 bit product, then store the low 64 bits in `plow` register and the high 64 bits in `phigh` register.
+
+### madd
+```
+madd dst:gpr, src1:gpr, src2:gpr, src3:gpr
+```
+![madd encoding](./ref-assets/madd.svg)
+
+multiplies registers `src1` by `src2` and adds register `src3` to the product and stores the result in `dst` register.
+
+### msub
+```
+msub dst:gpr, src1:gpr, src2:gpr, src3:gpr
+```
+![msub encoding](./ref-assets/msub.svg)
+
+multiplies registers `src1` by `src2` and subtracts the product from register `src3` and stores the result in `dst` register.
+
+## division
+### div
+```
+div dst:gpr, src1:gpr, src2:gpr
+```
+![div encoding](./ref-assets/div.svg)
+
+divides registers `src1` by `src2` and stores the quotient in `dst` register.
+
+it is an alias for `div.full`
+
+### rem
+```
+rem dst:gpr, src1:gpr, src2:gpr
+```
+![rem encoding](./ref-assets/rem.svg)
+
+computes the remainder of register `src1` divided by register `src2` and stores the result in `dst` register.
+
+it is an alias for `div.full`
+
+### div.full
+```
+div.full quo:gpr, rem:gpr, src1:gpr, src2:gpr
+```
+![div.full encoding](./ref-assets/div_full.svg)
+
+divides registers `src1` by `src2` then stores the quotient in `quo` register and the remainder in `rem` register.
+
+### udiv
+```
+udiv dst:gpr, src1:gpr, src2:gpr
+```
+![udiv encoding](./ref-assets/udiv.svg)
+
+unsigned divide registers `src1` by `src2` and stores the quotient in `dst` register.
+
+it is an alias for `udiv.full`
+
+### urem
+```
+urem dst:gpr, src1:gpr, src2:gpr
+```
+![urem encoding](./ref-assets/urem.svg)
+
+unsigned remainder of register `src1` divided by register `src2` and stores the result in `dst` register.
+
+it is an alias for `udiv.full`
+
+### udiv.full
+```
+udiv.full quo:gpr, rem:gpr, src1:gpr, src2:gpr
+```
+![udiv.full encoding](./ref-assets/udiv_full.svg)
+
+unsigned divide registers `src1` by `src2` then stores the quotient in `quo` register and the remainder in `rem` register.
 
 # sign processing instructions
 
