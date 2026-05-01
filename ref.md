@@ -325,3 +325,35 @@ strings are double quoted and can have the following escape sequences:
 ```
 hello: str "hello world"
 ```
+
+# instruction format
+instructions in mep are fixed 32 bit long, composed into multiple fields.
+
+these fields starts from the least significant bit, and can be opcodes, registers, immediate and options.
+
+### registers
+registers are encoded inside 5 bit fields called `gpr` based on their index.
+
+| **register** | **encoding** | **register** | **encoding** | **register** | **encoding** | **register** | **encoding** |
+| --------- | ------- | --------- | ------- | --------- | ------- | --------- | ------- |
+| **`R0`**  | `00000` | **`R8`**  | `01000` | **`R16`** | `10100` | **`R24`** | `11000` |
+| **`R1`**  | `00001` | **`R9`**  | `01001` | **`R17`** | `10101` | **`R25`** | `11001` |
+| **`R2`**  | `00010` | **`R10`** | `01010` | **`R18`** | `10110` | **`R26`** | `11010` |
+| **`R3`**  | `00011` | **`R11`** | `01011` | **`R19`** | `10111` | **`R27`** | `11011` |
+| **`R4`**  | `00100` | **`R12`** | `01100` | **`R20`** | `11000` | **`R28`** | `11100` |
+| **`R5`**  | `00101` | **`R13`** | `01101` | **`R21`** | `11001` | **`R29`** | `11101` |
+| **`R6`**  | `00110` | **`R14`** | `01110` | **`R22`** | `11010` | **`R30`** | `11110` |
+| **`R7`**  | `00111` | **`R15`** | `01111` | **`R23`** | `11011` | **`R31`** | `11111` |
+
+`cond` is a 5 bit field that encodes a register holding a condition, it is simmilar to `gpr` except `C0` replaces `R0`.
+
+`gpr_pc` is a 5 bit field similar to `gpr` execept `PC` replaces `R0`.
+
+### immediates
+immediates are encoded directly inside instructions in fields of various sizes.
+
+the immediates fields with their fields are:
+- for unsigned immediates: `u6_imd` (6 bits), `u12_imd` (12 bits).
+- for signed immediates: `s9_imd` (9 bits), `s10_imd` (10 bits), `s12_imd` (12 bits), `s19_imd` (19 bits) and `s24_imd` (24 bits).
+
+signed immediates are encoded in twos complement, and all immediates are contiguous inside the instruction except for `s9_imd` where the sign bit is encoded separately.
