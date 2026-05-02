@@ -150,18 +150,18 @@ fn exec_2regs (inst, state) => dec_2reg(inst[5],inst[6], inst[7]): {
 				7 => cto(state.regs[src]),
 				// rev dst:reg, src:reg
 				8 => rev(state.regs[src]),
-				// rev.8 dst:reg, src:reg
-				9 => rev8(state.regs[src]),
+				// rev.32 dst:reg, src:reg
+				9 => rev32(state.regs[src]),
 				// rev.16 dst:reg, src:reg
 				10 => rev16(state.regs[src]),
-				// rev.32 dst:reg, src:reg
-				11 => rev32(state.regs[src]),
-				// se.8 dst:reg, src:reg
-				12 => sign_ext8(state.regs[src]),
-				// se.16 dst:reg, src:reg
-				13 => sign_ext16(state.regs[src]),
+				// rev.8 dst:reg, src:reg
+				11 => rev8(state.regs[src]),
 				// se.32 dst:reg, src:reg
-				14 => sign_ext32(state.regs[src]),
+				13 => sign_ext32(state.regs[src]),
+				// se.16 dst:reg, src:reg
+				14 => sign_ext16(state.regs[src]),
+				// se.8 dst:reg, src:reg
+				15 => sign_ext8(state.regs[src]),
 				_ => invalid(state, inst)
 			} |> write_reg(state, dst, _),
 			_ => invalid(state, inst)

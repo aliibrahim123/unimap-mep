@@ -18,16 +18,16 @@ the majority of instructions operate on general purpose registers (`gpr`). mep p
 
 these registers can be used freely for any purpose and are accessable to all instructions.
 
-`R0` (the zero register) is a general purpose register that is hardcoded to 0, any read from it will resolve to 0, and all writes are discarded.
+`r0` (the zero register) is a general purpose register that is hardcoded to 0, any read from it will resolve to 0, and all writes are discarded.
 
-`PC` (program counter) is an internal 64 bit register that holds the momery address of the current executing instruction, it is not accessible or modifiable by normal instruction, it is only accessable through special instructions.
+`pc` (program counter) is an internal 64 bit register that holds the momery address of the current executing instruction, it is not accessible or modifiable by normal instruction, it is only accessable through special instructions.
 
 ### condition registers
 mep doesnt have a traditional flagss register, instead all gprs can be used as condition registers.
 
 when evaluated as a condition, zero value is `false`, while non-zero values are `true`.
 
-`R0` used as a condition register redirects to a 1 bit `C0` register, it can hold a condition without overwriting another register.
+`r0` used as a condition register redirects to a 1 bit `c0` register, it can hold a condition without overwriting another register.
 
 ## memory
 memory in mep is byte addressable with 64 bit address space.
@@ -130,12 +130,14 @@ the variant decleration is a comma separated list of variant suffixes enclosed i
 
 an oprand decleration consist of the oprand identifier followed by its type, an oprand is optional is its identifier is suffixed with `?`.
 
+an instruction mnemonic can be overloaded depending on its operands.
+
 ```
 add dst:gpr, src1:gpr, src2:u12_imd
 comp.eq{_, .and, .or} dst:cond, src1:gpr, src2:gpr
 ```
 
-### opreands
+### operands
 ```gramex
 let oprand = reg | sh_reg | imd | label | address;
 let oprand_type = reg_type | "sh_reg" | imd_type | address_type; 
@@ -153,28 +155,28 @@ ld r4, [r1 += 0x10]
 
 ### register oprands
 ```gramex
-let gpr = ("r" | "R")("0".."9" | ("1" | "2") "0".."9" | "30" | "31");
-let pc = "pc" | "PC";
-let c0 = "c0" | "C0";
+let gpr = "r" ("0".."9" | ("1" | "2") "0".."9" | "30" | "31");
+let pc = "pc";
+let c0 = "c0";
 let reg = gpr | pc | c0;
 let reg_type = "gpr" | "cond" | "gpr_pc";
 ```
 register oprands are the most common oprand types, they come in different types:
 - `gpr`: any general purpose registers.
-- `cond`: register holding a condition, `C0` and any general purpose registers except `R0`.
-- `gpr_pc`: `PC` and any general purpose registers except `R0`.
+- `cond`: register holding a condition, `c0` and any general purpose registers except `r0`.
+- `gpr_pc`: `pc` and any general purpose registers except `r0`.
 
 register names can be upper or lower.
 
 ```
 add r3, R1, r2
 comp.eq c0, r1, r2
-add r3, PC, +4
+add r3, pc, +4
 ```
 
 ### shifted register oprands
 ```gramex
-let sh_reg = gpr | gpr ("shl" | "shr" | "sar" | "rol" | "SHL" | "SHR" | "SAR" | "ROL) nb; 
+let sh_reg = gpr | gpr ("shl" | "shr" | "sar" | "rol") nb; 
 ```
 shifted register oprands are general purpose registers shifted by a constant encoded in a 6 bit immediate.
 
@@ -240,7 +242,7 @@ ld r1, [data]
 ### address oprands
 ```gramex
 let base_offset = gpr ("+" | "-") "="? nb;
-let base_index = gpr | gpr "+" gpr (("shl" | "SHL") nb)?;
+let base_index = gpr | gpr "+" gpr ("shl" nb)?;
 let address = "[" (imd | label | base_offset | base_index) "]";
 let address_type = "offset" | "base_offset" | "base_index";
 ```
@@ -341,18 +343,18 @@ registers are encoded inside 5 bit fields called `gpr` based on their index.
 
 | **register** | **encoding** | **register** | **encoding** | **register** | **encoding** | **register** | **encoding** |
 | --------- | ------- | --------- | ------- | --------- | ------- | --------- | ------- |
-| **`R0`**  | `00000` | **`R8`**  | `01000` | **`R16`** | `10100` | **`R24`** | `11000` |
-| **`R1`**  | `00001` | **`R9`**  | `01001` | **`R17`** | `10101` | **`R25`** | `11001` |
-| **`R2`**  | `00010` | **`R10`** | `01010` | **`R18`** | `10110` | **`R26`** | `11010` |
-| **`R3`**  | `00011` | **`R11`** | `01011` | **`R19`** | `10111` | **`R27`** | `11011` |
-| **`R4`**  | `00100` | **`R12`** | `01100` | **`R20`** | `11000` | **`R28`** | `11100` |
-| **`R5`**  | `00101` | **`R13`** | `01101` | **`R21`** | `11001` | **`R29`** | `11101` |
-| **`R6`**  | `00110` | **`R14`** | `01110` | **`R22`** | `11010` | **`R30`** | `11110` |
-| **`R7`**  | `00111` | **`R15`** | `01111` | **`R23`** | `11011` | **`R31`** | `11111` |
+| **`r0`**  | `00000` | **`r8`**  | `01000` | **`r16`** | `10100` | **`r24`** | `11000` |
+| **`r1`**  | `00001` | **`r9`**  | `01001` | **`r17`** | `10101` | **`r25`** | `11001` |
+| **`r2`**  | `00010` | **`r10`** | `01010` | **`r18`** | `10110` | **`r26`** | `11010` |
+| **`r3`**  | `00011` | **`r11`** | `01011` | **`r19`** | `10111` | **`r27`** | `11011` |
+| **`r4`**  | `00100` | **`r12`** | `01100` | **`r20`** | `11000` | **`r28`** | `11100` |
+| **`r5`**  | `00101` | **`r13`** | `01101` | **`r21`** | `11001` | **`r29`** | `11101` |
+| **`r6`**  | `00110` | **`r14`** | `01110` | **`r22`** | `11010` | **`r30`** | `11110` |
+| **`r7`**  | `00111` | **`r15`** | `01111` | **`r23`** | `11011` | **`r31`** | `11111` |
 
-`cond` is a 5 bit field that encodes a register holding a condition, it is simmilar to `gpr` except `C0` replaces `R0`.
+`cond` is a 5 bit field that encodes a register holding a condition, it is simmilar to `gpr` except `c0` replaces `r0`.
 
-`gpr_pc` is a 5 bit field similar to `gpr` execept `PC` replaces `R0`.
+`gpr_pc` is a 5 bit field similar to `gpr` execept `pc` replaces `r0`.
 
 ### immediates
 immediates are encoded directly inside instructions in fields of various sizes.
@@ -372,15 +374,35 @@ some instructions take a shifted register oprand, it is encoded in 3 fields: a `
 - `10`: arithmetic right (`sar`)
 - `11`: rotate left (`rol`)
 
+### logic immediate
+logic immediates are encoded in 3 fields: `l0` a 1 bit field that specifies the `level`, `ones` a `u6_imd` that encodes `level` and `one_len`,
+and `rot` a `u6_imd` that correspond to its macro counterpart.
+
+the concatenation of `l0` and `ones` gives huffman encoding of `level` and `one_len`
+| `l0` ~ `ones` | `level` | `one_len` |
+| --------- | ---- | -------- |
+| `0nnnnnn` | `64` | `nnnnnn` + `1` |
+| `10nnnnn` | `32` | `nnnnn` + `1`  |
+| `110nnnn` | `16` | `nnnn` + `1`   |
+| `1110nnn` | `8`  | `nnn` + `1`    |
+| `11110nn` | `4`  | `nn` + `1`     |
+| `111110n` | `2`  | `n` + `1`      |
+
 ### options
 `cw` is a 2 bit field that modifies how a condition is written, it can be:
 - **default (`00`)**: overwrite distination register with the computed condition.
-- **and (`01`)**: and the computed condition with the distination register condition.
-- **or (`11`)**: or the computed condition with the distination register condition.
+- **`.and` (`01`)**: and the computed condition with the distination register condition.
+- **`.or` (`11`)**: or the computed condition with the distination register condition.
 
 `ca` is a 1 bit field that modifies how a condition is written, it can be:
 - **default (`0`)**: overwrite distination register with the computed condition.
-- **and (`1`)**: and the computed condition with the distination register condition.
+- **`.and` (`1`)**: and the computed condition with the distination register condition.
+
+`sz` is a 2 bit field that specifies the data width, it can be:
+- `00`: 64 bit
+- `01`: 32 bit
+- `10`: 16 bit
+- `11`: 8 bit
 
 # arithmatic instructions
 ## addition
@@ -398,7 +420,7 @@ add dst:gpr, src1:gpr_pc, src2:u12_imd
 ```
 ![add imd encoding](./ref-assets/add_imd.svg)
 
-adds register / `PC` (`src1`) and immediate `src2` and writes the result to `dst` register.
+adds register / `pc` (`src1`) and immediate `src2` and writes the result to `dst` register.
 
 ### add.carry
 ```
@@ -474,7 +496,7 @@ mult dst:gpr, src1:gpr, src2:gpr
 
 multiplies registers `src1` by `src2` and writes the result to `dst` register.
 
-it is an alias for `mult.full`
+it is an alias for `mult.full dst, r0, src1, src2`
 
 ### mult full
 ```
@@ -509,7 +531,7 @@ div dst:gpr, src1:gpr, src2:gpr
 
 divides registers `src1` by `src2` and writes the quotient to `dst` register.
 
-it is an alias for `div.full`
+it is an alias for `div.full dst, r0, src1, src2`
 
 ### rem
 ```
@@ -519,7 +541,7 @@ rem dst:gpr, src1:gpr, src2:gpr
 
 computes the remainder of register `src1` divided by register `src2` and writes the result to `dst` register.
 
-it is an alias for `div.full`
+it is an alias for `div.full r0, dst, src1, src2`
 
 ### div.full
 ```
@@ -537,7 +559,7 @@ udiv dst:gpr, src1:gpr, src2:gpr
 
 unsigned divide registers `src1` by `src2` and writes the quotient to `dst` register.
 
-it is an alias for `udiv.full`
+it is an alias for `udiv.full dst, r0, src1, src2`
 
 ### urem
 ```
@@ -547,7 +569,7 @@ urem dst:gpr, src1:gpr, src2:gpr
 
 unsigned remainder of register `src1` divided by register `src2` and writes the result to `dst` register.
 
-it is an alias for `udiv.full`
+it is an alias for `udiv.full r0, dst, src1, src2`
 
 ### udiv.full
 ```
@@ -575,7 +597,7 @@ neg dst:gpr, src:sh_reg
 
 negates an optionally shifted register `src` and writes the result to `dst` register.
 
-it is an alias for `sub`
+it is an alias for `sub dst, r0, src`
 
 ### cneg
 ```
@@ -584,6 +606,14 @@ cneg dst:gpr, cond:cond, src:gpr
 ![cneg encoding](./ref-assets/cneg.svg)
 
 write to `dst` register the negation of `src` register if `cond` register is `true`, otherwise move `src` without modification.
+
+### signed extend
+```
+se{.s32, .s16, .s8} dst:gpr, src:gpr
+```
+![se encoding](./ref-assets/se.svg)
+
+signed extends register `src` to 32, 16 or 8 bits and writes the result to `dst` register.
 
 ## min / max
 ### min
@@ -722,6 +752,207 @@ determines if register `src1` is unsignly greater than immediate `src2` and writ
 this instruction can optionally and the computed condition with `dst`.
 
 # logical instructions
+## primary operations
+### not (shifted register)
+```
+not dst:gpr, src:sh_reg
+```
+![not encoding](./ref-assets/not.svg)
+
+inverts optionally shifted register `src` and writes the result to `dst` register.
+
+it is an alias for `xnor dst, r0, src`.
+
+### and (shifted register)
+```
+and dst:gpr, src1:gpr, src2:sh_reg
+```
+![and encoding](./ref-assets/and.svg)
+
+computes the bitwise and of register `src1` and optionally shifted register `src2` and writes the result to `dst` register.
+
+### and (immediate)
+```
+and dst:gpr, src1:gpr, src2:logic_imd
+```
+![and imd encoding](./ref-assets/and_imd.svg)
+
+computes the bitwise and of register `src1` and logical immediate `src2` and writes the result to `dst` register.
+
+### or (shifted register)
+```
+or dst:gpr, src1:gpr, src2:sh_reg
+```
+![or encoding](./ref-assets/or.svg)
+
+computes the bitwise or of register `src1` and optionally shifted register `src2` and writes the result to `dst` register.
+
+### or (immediate)
+```
+or dst:gpr, src1:gpr, src2:logic_imd
+```
+![or imd encoding](./ref-assets/or_imd.svg)
+
+computes the bitwise or of register `src1` and logical immediate `src2` and writes the result to `dst` register.
+
+### xor (shifted register)
+```
+xor dst:gpr, src1:gpr, src2:sh_reg
+```
+![xor encoding](./ref-assets/xor.svg)
+
+computes the bitwise exclusive or of register `src1` and optionally shifted register `src2` and writes the result to `dst` register.
+
+### xor (immediate)
+```
+xor dst:gpr, src1:gpr, src2:logic_imd
+```
+![xor imd encoding](./ref-assets/xor_imd.svg)
+
+computes the bitwise exclusive or of register `src1` and logical immediate `src2` and writes the result to `dst` register.
+
+## inverted primary operations
+### nand (shifted register)
+```
+nand dst:gpr, src1:gpr, src2:sh_reg
+```
+![nand encoding](./ref-assets/nand.svg)
+
+computes the bitwise inverted and of register `src1` and optionally shifted register `src2` and writes the result to `dst` register.
+
+### nand (immediate)
+```
+nand dst:gpr, src1:gpr, src2:logic_imd
+```
+![nand imd encoding](./ref-assets/nand_imd.svg)
+
+computes the bitwise inverted and of register `src1` and logical immediate `src2` and writes the result to `dst` register.
+
+### nor (shifted register)
+```
+nor dst:gpr, src1:gpr, src2:sh_reg
+```
+![nor encoding](./ref-assets/nor.svg)
+
+computes the bitwise inverted or of register `src1` and optionally shifted register `src2` and writes the result to `dst` register.
+
+### nor (immediate)
+```
+nor dst:gpr, src1:gpr, src2:logic_imd
+```
+![nor imd encoding](./ref-assets/nor_imd.svg)
+
+computes the bitwise inverted or of register `src1` and logical immediate `src2` and writes the result to `dst` register.
+
+### xnor (shifted register)
+```
+xnor dst:gpr, src1:gpr, src2:sh_reg
+```
+![xnor encoding](./ref-assets/xnor.svg)
+
+computes the bitwise inverted exclusive or of register `src1` and optionally shifted register `src2` and writes the result to `dst` register.
+
+### xnor (immediate)
+```
+xnor dst:gpr, src1:gpr, src2:logic_imd
+```
+![xnor imd encoding](./ref-assets/xnor_imd.svg)
+
+computes the bitwise inverted exclusive or of register `src1` and logical immediate `src2` and writes the result to `dst` register.
+
+## secondary operations
+### bit clear (shifted register)
+```
+bcr dst:gpr, src1:gpr, src2:sh_reg
+```
+![bcr encoding](./ref-assets/bcr.svg)
+
+computes the bitwise and of register `src1` and the inverse of optionally shifted register `src2` and writes the result to `dst` register.
+
+### bit clear (immediate)
+```
+bcr dst:gpr, src1:gpr, src2:logic_imd
+```
+![bcr imd encoding](./ref-assets/bcr_imd.svg)
+
+computes the bitwise and of register `src1` and the inverse of logical immediate `src2` and writes the result to `dst` register.
+
+### imply (shifted register)
+```
+imply dst:gpr, src1:gpr, src2:sh_reg
+```
+![imply encoding](./ref-assets/imply.svg)
+
+computes the bitwise or of the inverse of register `src1` and optionally shifted register `src2` and writes the result to `dst` register.
+
+### imply (immediate)
+```
+imply dst:gpr, src1:gpr, src2:logic_imd
+```
+![imply imd encoding](./ref-assets/imply_imd.svg)
+
+computes the bitwise or of the inverse of register `src1` and logical immediate `src2` and writes the result to `dst` register.
+
+## bit test
+### test.none
+```
+test.none dst:cond, src:gpr, mask:gpr
+```
+![test.none encoding](./ref-assets/test_none.svg)
+
+determines if all bits in register `src` specified by register `mask` are zero and writes the result condition to `dst` register.
+
+this instruction can optionally and / or the computed condition with `dst`.
+
+### test.none (immediate)
+```
+test.none dst:cond, src:gpr, mask:logic_imd
+```
+![test.none imd encoding](./ref-assets/test_none_imd.svg)
+
+determines if all bits in register `src` specified by logical immediate `mask` are zero and writes the result condition to `dst` register.
+
+this instruction can optionally and the computed condition with `dst`.
+
+### test.any
+```
+test.any dst:cond, src:gpr, mask:gpr
+```
+![test.any encoding](./ref-assets/test_any.svg)
+
+determines if any bit in register `src` specified by register `mask` is one and writes the result condition to `dst` register.
+
+this instruction can optionally and / or the computed condition with `dst`.
+
+### test.any (immediate)
+```
+test.any dst:cond, src:gpr, mask:logic_imd
+```
+![test.any imd encoding](./ref-assets/test_any_imd.svg)
+
+determines if any bit in register `src` specified by logical immediate `mask` is one and writes the result condition to `dst` register.
+
+this instruction can optionally and the computed condition with `dst`.
+
+### test.all
+```
+test.all dst:cond, src:gpr, mask:gpr
+```
+![test.all encoding](./ref-assets/test_all.svg)
+
+determines if all bits in register `src` specified by register `mask` are one and writes the result condition to `dst` register.
+
+this instruction can optionally and / or the computed condition with `dst`.
+
+### test.all (immediate)
+```
+test.all dst:cond, src:gpr, mask:logic_imd
+```
+![test.all imd encoding](./ref-assets/test_all_imd.svg)
+
+determines if all bits in register `src` specified by logical immediate `mask` are one and writes the result condition to `dst` register.
+
+this instruction can optionally and the computed condition with `dst`.
 
 # bit manipulation instructions
 

@@ -21,12 +21,16 @@ let dpr_4reg = b4(2);
 let dpr_2r_g0 = b8(0);
 let dpr_3r_g0 = b4(0);
 let dpr_3r_g1 = b4(1);
+let dpr_3r_g2 = b4(2);
 
 let r0 = { value: "00000", type: "gpr", width: 5 };
 let sh_op = [{ name: "sh", width: 2 }, u6_imd("sh_amount")];
-let sh_0 = [{ value: 0, type: "sh", width: 2 }, { value: 0, type: "sh_amount", width: 6 }];
 let cw = { name: "cw", width: 2 };
 let ca = { name: "ca", width: 1 };
+let sz = { name: "sz", width: 2 };
+let logic_imd = [u6_imd("ones"), u6_imd("rot")];
+let l0 = { name: "l0", width: 1 };
+
 export default [
 	{
 		name: "add",
@@ -98,6 +102,9 @@ export default [
 		name: "cneg",
 		fields: [op_dpr, dpr_3reg, dpr_3r_g0, b5(8), gpr("dst"), gpr("cond"), gpr("src")]
 	}, {
+		name: "se",
+		fields: [op_dpr, dpr_2reg, dpr_2r_g0, b2(3), sz, b2(0), gpr("dst"), gpr("src")]
+	}, {
 		name: "min",
 		fields: [op_dpr, dpr_3reg, dpr_3r_g0, b5(2), gpr("dst"), gpr("src1"), gpr("src2")]
 	}, {
@@ -139,6 +146,75 @@ export default [
 	}, {
 		name: "ucomp_gt_imd",
 		fields: [op_dpi, b4(6), b1(1), ca, cond("dst"), gpr("src1"), u12_imd("src2")]
+	}, {
+		name: "not",
+		fields: [op_dpr, b4(14), ...sh_op, b1(1), gpr("dst"), r0, gpr("src")]
+	}, {
+		name: "and",
+		fields: [op_dpr, b4(8), ...sh_op, b1(1), gpr("dst"), gpr("src1"), gpr("src2")]
+	}, {
+		name: "or",
+		fields: [op_dpr, b4(9), ...sh_op, b1(1), gpr("dst"), gpr("src1"), gpr("src2")]
+	}, {
+		name: "xor",
+		fields: [op_dpr, b4(10), ...sh_op, b1(1), gpr("dst"), gpr("src1"), gpr("src2")]
+	}, {
+		name: "imply",
+		fields: [op_dpr, b4(11), ...sh_op, b1(1), gpr("dst"), gpr("src1"), gpr("src2")]
+	}, {
+		name: "nand",
+		fields: [op_dpr, b4(12), ...sh_op, b1(1), gpr("dst"), gpr("src1"), gpr("src2")]
+	}, {
+		name: "nor",
+		fields: [op_dpr, b4(13), ...sh_op, b1(1), gpr("dst"), gpr("src1"), gpr("src2")]
+	}, {
+		name: "xnor",
+		fields: [op_dpr, b4(14), ...sh_op, b1(1), gpr("dst"), gpr("src1"), gpr("src2")]
+	}, {
+		name: "bcr",
+		fields: [op_dpr, b4(15), ...sh_op, b1(1), gpr("dst"), gpr("src1"), gpr("src2")]
+	}, {
+		name: "and_imd",
+		fields: [op_dpi, b4(0), b1(0), l0, gpr("dst"), gpr("src1"), ...logic_imd]
+	}, {
+		name: "or_imd",
+		fields: [op_dpi, b4(0), b1(1), l0, gpr("dst"), gpr("src1"), ...logic_imd]
+	}, {
+		name: "xor_imd",
+		fields: [op_dpi, b4(1), b1(0), l0, gpr("dst"), gpr("src1"), ...logic_imd]
+	}, {
+		name: "imply_imd",
+		fields: [op_dpi, b4(1), b1(1), l0, gpr("dst"), gpr("src1"), ...logic_imd]
+	}, {
+		name: "nand_imd",
+		fields: [op_dpi, b4(2), b1(0), l0, gpr("dst"), gpr("src1"), ...logic_imd]
+	}, {
+		name: "nor_imd",
+		fields: [op_dpi, b4(2), b1(1), l0, gpr("dst"), gpr("src1"), ...logic_imd]
+	}, {
+		name: "xnor_imd",
+		fields: [op_dpi, b4(3), b1(0), l0, gpr("dst"), gpr("src1"), ...logic_imd]
+	}, {
+		name: "bcr_imd",
+		fields: [op_dpi, b4(3), b1(1), l0, gpr("dst"), gpr("src1"), ...logic_imd]
+	}, {
+		name: "test_none",
+		fields: [op_dpr, dpr_3reg, dpr_3r_g2, b3(0), cw, cond("dst"), gpr("src"), gpr("mask")]
+	}, {
+		name: "test_any",
+		fields: [op_dpr, dpr_3reg, dpr_3r_g2, b3(1), cw, cond("dst"), gpr("src"), gpr("mask")]
+	}, {
+		name: "test_all",
+		fields: [op_dpr, dpr_3reg, dpr_3r_g2, b3(2), cw, cond("dst"), gpr("src"), gpr("mask")]
+	}, {
+		name: "test_none_imd",
+		fields: [op_dpi, b4(7), ca, l0, gpr("dst"), gpr("src"), ...logic_imd]
+	}, {
+		name: "test_any_imd",
+		fields: [op_dpi, b4(8), ca, l0, gpr("dst"), gpr("src"), ...logic_imd]
+	}, {
+		name: "test_all_imd",
+		fields: [op_dpi, b4(9), ca, l0, gpr("dst"), gpr("src"), ...logic_imd]
 	},
 
 ];
