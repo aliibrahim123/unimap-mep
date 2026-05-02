@@ -192,12 +192,12 @@ or r4, r1, r3 rol 31
 ### immediate oprands
 ```gramex
 let imd = ("+" | "-")? nb | logic_imd;
-let imd_type = "u6_imd" | "u12_imd" | "s9_imd" | "s10_imd" | "s12_imd" | "s19_imd" | "s24_imd" | "logic_imd";
+let imd_type = "u2_imd" | "u6_imd" | "u12_imd" | "u16_imd" | "s9_imd" | "s10_imd" | "s12_imd" | "s19_imd" | "s24_imd" | "logic_imd";
 ```
 immediate oprands are integer literals that get encoded directly into the instructions.
 
 they can be unsigned or unsigned and of different sizes, the available sizes are:
-- for unsigned immediates: 6 bits (`u6_imd`) and 12 bits (`u12_imd`).
+- for unsigned immediates: 2 bits (`u2_imd`), 6 bits (`u6_imd`), 12 bits (`u12_imd`), 16 bits (`u16_imd`).
 - for signed immediates: 9 bits (`s9_imd`), 10 bits (`s10_imd`), 12 bits (`s12_imd`), 19 bits (`s19_imd`) and 24 bits (`s24_imd`).
 
 the sign is forbidden for unsigned immediates and required for signed ones.
@@ -360,7 +360,7 @@ registers are encoded inside 5 bit fields called `gpr` based on their index.
 immediates are encoded directly inside instructions in fields of various sizes.
 
 the immediates fields with their fields are:
-- for unsigned immediates: `u6_imd` (6 bits), `u12_imd` (12 bits).
+- for unsigned immediates: `u2_imd` (2 bits), `u6_imd` (6 bits), `u12_imd` (12 bits).
 - for signed immediates: `s9_imd` (9 bits), `s10_imd` (10 bits), `s12_imd` (12 bits), `s19_imd` (19 bits) and `s24_imd` (24 bits).
 
 signed immediates are encoded in twos complement, and all immediates are contiguous inside the instruction except for `s9_imd` where the sign bit is encoded separately.
@@ -1158,5 +1158,143 @@ rev{.8, .16, .32} dst:gpr, src:gpr
 reverse the order of 8, 16 or 32 bits parts in register `src` and writes the result to `dst` register.
 
 # data movement instructions
+## move
+### mov (register)
+```
+mov dst:gpr, src:gpr
+```
+![mov encoding](./ref-assets/mov.svg)
+
+move register `src` to `dst` register.
+
+this is an alias for `or dst, src, r0`.
+
+### mov (immediate)
+```
+mov dst:gpr, src:u16_imd, sh?: u2_imd
+```
+![mov imd encoding](./ref-assets/mov_imd.svg)
+
+write immediate `src` left shifted by (immediate `sh` * `16`) to `dst` register.
+
+### mov (logic immediate)
+```
+mov dst:gpr, src:logic_imd
+```
+![mov logic imd encoding](./ref-assets/mov_logic_imd.svg)
+
+write the logic immediate `src` to `dst` register.
+
+this is an alias for `or dst, r0, src`.
+
+### mov (negative immediate)
+```
+move dst:gpr, -src:u12_imd
+```
+![mov neg imd encoding](./ref-assets/mov_neg_imd.svg)
+
+write the negative immediate `src` to `dst` register.
+
+this is an alias for `sub dst, r0, src`.
+
+### mov.keep
+```
+mov.keep dst:gpr, src:u16_imd, sh:u2_imd
+```
+![mov.keep encoding](./ref-assets/mov_keep.svg)
+
+write immediate `src` into the 16 bit part of `dst` register specified by immediate `sh` without effecting the other bits.
+
+## conditional select
+### sel
+```
+sel dst:gpr, cond:cond, src1:gpr, src2:gpr
+```
+![sel encoding](./ref-assets/sel.svg)
+
+write to `dst` register the value of register `src1` if `cond` register is `true`, otherwise write the value of register `src2`.
+
+### sel (immediate)
+```
+sel dst:gpr, cond:cond, src1:gpr, src2:s9_imd
+```
+![sel imd encoding](./ref-assets/sel_imd.svg)
+
+write to `dst` register the value of register `src1` if `cond` register is `true`, otherwise write the immediate `src2`.
+
+`src2` is a `s9_imd` where the sign bit is encoded in `s` field.
+
+## mem access (offset)
+### ld (offset)
+```
+ld{_, .32, .16, .8} dst:gpr, loc:offset
+```
+![ld offset encoding](./ref-assets/ld_offset.svg)
+
+loads from memory the 64, 32, 16 or 8 bits value at address `loc` and writes the result to `dst` register.
+
+the address is computed a `s19_imd` relative `offset` scaled by data width.
+
+## memory access (base + offset)
+![mem access base offset encoding](./ref-assets/mem_base_offset.svg)
+
+the address is computed from a `base` register plus a `s12_imd` `offset` scaled by data width.
+
+if `w` field is `1` the `base` register is updated with the computed address.
+
+### ld (base + offset)
+```
+ld{_, .32, .16, .8} dst:gpr, loc:base_offset
+```
+![ld base offset encoding](./ref-assets/ld_base_offset.svg)
+
+loads from memory the 64, 32, 16 or 8 bits value at address `loc` and writes the result to `dst` register.
+
+### st (base + offset)
+```
+st{_, .32, .16, .8} src:gpr, loc:base_offset
+```
+![st base offset encoding](./ref-assets/st_base_offset.svg)
+
+stores the 64, 32, 16 or 8 bits value in `src` register in memory at address `loc`.
+
+### ld.s (base + offset)
+```
+ld{.s32, .s16, .s8} dst:gpr, loc:base_offset
+```
+![ld.s base offset encoding](./ref-assets/ld_s_base_offset.svg)
+
+loads from memory the 32, 16 or 8 bits value at address `loc` and writes the signed extended result to `dst` register.
+
+## mem access (base + index)
+![mem access base index encoding](./ref-assets/mem_base_index.svg)
+
+the address is computed from a `base` register plus an `index` register.
+
+if `s` field is `1`, the `index` register is scaled by data width.
+
+### ld (base + index)
+```
+ld{_, .32, .16, .8} dst:gpr, loc:base_index
+```
+![ld base index encoding](./ref-assets/ld_base_index.svg)
+
+loads from memory the 64, 32, 16 or 8 bits value at address `loc` and writes the result to `dst` register.
+
+### st (base + index)
+```
+st{_, .32, .16, .8} src:gpr, loc:base_index
+```
+![st base index encoding](./ref-assets/st_base_index.svg)
+
+stores the 64, 32, 16 or 8 bits value in `src` register in memory at address `loc`.
+
+### ld.s (base + index)
+```
+ld{.s32, .s16, .s8} dst:gpr, loc:base_index
+```
+![ld.s base index encoding](./ref-assets/ld_s_base_index.svg)
+
+loads from memory the 32, 16 or 8 bits value at address `loc` and writes the signed extended result to `dst` register.
 
 # control flow instructions

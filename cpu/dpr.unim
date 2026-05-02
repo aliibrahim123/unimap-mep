@@ -214,7 +214,7 @@ fn exec_4regs (inst, state) => dec_4reg(inst[3], inst[4], inst[5], inst[6], inst
 		) |> write_reg(state, dst, _),
 
 		// sel dst:reg, cond:reg, src1:reg, src2:reg
-		11 => state.regs[read_cond(state, src1): { zero => src3, _ => src2 }] 
+		11 => state.regs[read_cond(state, src1): { 0 => src3, 1 => src2 }] 
 			|> write_reg(state, dst, _),
 		_ => invalid(state, inst)
 	}

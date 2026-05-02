@@ -9,12 +9,17 @@ let b8 = (value) => ({ value, width: 8 });
 let gpr = (name) => ({ name, type: "gpr", width: 5 });
 let gpr_pc = (name) => ({ name, type: "gpr_pc", width: 5 });
 let cond = (name) => ({ name, type: "cond", width: 5 });
+let u2_imd = (name) => ({ name, type: "u2_i", width: 2 });
 let u6_imd = (name) => ({ name, type: "u6_imd", width: 6 });
 let u12_imd = (name) => ({ name, type: "u12_imd", width: 12 });
+let u16_imd = (name) => ({ name, type: "u16_imd", width: 16 });
+let s9_imd = (name) => ({ name, type: "s9_imd", width: 8 });
 let s12_imd = (name) => ({ name, type: "s12_imd", width: 12 });
+let s19_imd = (name) => ({ name, type: "s19_imd", width: 19 });
 
 let op_dpr = b4(1);
 let op_dpi = b4(2);
+let op_mem = b4(3);
 let dpr_3reg = b4(0);
 let dpr_2reg = b4(1);
 let dpr_4reg = b4(2);
@@ -285,5 +290,56 @@ export default [
 	}, {
 		name: "rev_parts",
 		fields: [op_dpr, dpr_2reg, dpr_2r_g0, sz, b4(2), gpr("dst"), gpr("src")]
-	}
+	}, {
+		name: "mov",
+		fields: [
+			op_dpr, b4(9), sh(0), { value: 0, type: "sh_amount", width: 6 },
+			b1(1), gpr("dst"), gpr("src"), r0
+		]
+	}, {
+		name: "mov_imd",
+		fields: [op_dpi, b4(10), b1(0), u2_imd("sh"), gpr("dst"), u16_imd("src")]
+	}, {
+		name: "mov_logic_imd",
+		fields: [op_dpi, b4(0), b1(1), l0, gpr("dst"), r0, ...logic_imd]
+	}, {
+		name: "mov_neg_imd",
+		fields: [op_dpi, b4(4), b2(1), gpr("dst"), r0, u12_imd("src")]
+	}, {
+		name: "mov_keep",
+		fields: [op_dpi, b4(10), b1(1), u2_imd("sh"), gpr("dst"), u16_imd("src")]
+	}, {
+		name: "sel",
+		fields: [op_dpr, dpr_4reg, b4(11), gpr("dst"), cond("cond"), gpr("src1"), gpr("src2")]
+	}, {
+		name: "sel_imd",
+		fields: [op_dpi, b4(11), b1("s"), gpr("dst"), cond("cond"), gpr("src1"), s9_imd("src2")]
+	}, {
+		name: "ld_offset",
+		fields: [op_mem, b2(3), sz, s19_imd("offset"), gpr("dst")]
+	}, {
+		name: "mem_base_offset",
+		fields: [op_mem, b1(0), b1("w"), { name: "op" }, sz, gpr("reg"), gpr("base"), s12_imd("offset")]
+	}, {
+		name: "ld_base_offset",
+		fields: [op_mem, b1(0), b1("w"), b2(0), sz, gpr("dst"), gpr("base"), s12_imd("offset")]
+	}, {
+		name: "st_base_offset",
+		fields: [op_mem, b1(0), b1("w"), b2(1), sz, gpr("src"), gpr("base"), s12_imd("offset")]
+	}, {
+		name: "ld_s_base_offset",
+		fields: [op_mem, b1(0), b1("w"), b2(2), sz, gpr("dst"), gpr("base"), s12_imd("offset")]
+	}, {
+		name: "mem_base_index",
+		fields: [op_mem, b2(2), b6(0), { name: "op" }, sz, "s", gpr("reg"), gpr("base"), gpr("index")]
+	}, {
+		name: "ld_base_index",
+		fields: [op_mem, b2(2), b6(0), b2(0), sz, "s", gpr("reg"), gpr("base"), gpr("index")]
+	}, {
+		name: "st_base_index",
+		fields: [op_mem, b2(2), b6(0), b2(1), sz, "s", gpr("reg"), gpr("base"), gpr("index")]
+	}, {
+		name: "ld_s_base_index",
+		fields: [op_mem, b2(2), b6(0), b2(2), sz, "s", gpr("reg"), gpr("base"), gpr("index")]
+	},
 ];
