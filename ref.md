@@ -504,7 +504,7 @@ multiplies registers `src1` by `src2` and writes the result to `dst` register.
 
 it is an alias for `mult.full dst, r0, src1, src2`
 
-### mult full
+### mult.full
 ```
 mult.full plow:gpr, phigh:gpr, src1:gpr, src2:gpr
 ```
@@ -1357,3 +1357,130 @@ halt
 ![halt encoding](./ref-assets/halt.svg)
 
 halt and end execution without catching on fire.
+
+# index by encoding
+![root](./ref-assets/root_enc.svg)
+
+| `pgrp` | primary group |
+| ------ | --- | 
+| `0001` | [`dpr`](#data-processing-register) |
+| `0010` | `dpi` |
+| `0011` | `mem` |
+| `0100` | `branch` |
+
+## data processing register
+![dpr root](./ref-assets/dpr_enc.svg)
+
+| `grp` | group |
+| ------ | --- |
+| `0000` | [**3 regs**](#3-regs) |
+| `0001` | [**2 regs**](#2-regs) |
+| `0010` | [**4 regs**](#4-regs) |
+| `1xxx` | [**shift**](#shift) |
+
+### 3 regs
+#### format 1
+![3 regs format 1](./ref-assets/3_regs_f1_enc.svg)
+
+#### format 2
+![3 regs format 2](./ref-assets/3_regs_f2_enc.svg)
+
+#### format 3
+![3 regs format 3](./ref-assets/3_regs_f3_enc.svg)
+
+| `sub_grp` | `op` | format | instruction |
+| ----- | --- | --- | --- |
+| `0000` | `00000` | 1 | [`shr`](#shr) |
+| `0000` | `00001` | 1 | [`sar`](#sar) |
+| `0000` | `00010` | 1 | [`min`](#min) |
+| `0000` | `00011` | 1 | [`max`](#max) |
+| `0000` | `00100` | 1 | [`umin`](#umin) |
+| `0000` | `00101` | 1 | [`umax`](#umax) |
+| `0000` | `00110` | 2 | [`cnot`](#cnot) |
+| `0000` | `00111` | 2 | [`cinc`](#cinc) |
+| `0000` | `01000` | 2 | [`cneg`](#cneg) |
+| `0001` | `000` | 3 | [`comp.eq`](#compeq) |
+| `0001` | `001` | 3 | [`comp.ne`](#compne) |
+| `0001` | `010` | 3 | [`comp.gt`](#compgt) |
+| `0001` | `011` | 3 | [`comp.le`](#comple) |
+| `0001` | `100` | 3 | [`ucomp.gt`](#ucompgt) |
+| `0001` | `101` | 3 | [`ucomp.le`](#ucomple) |
+| `0010` | `000` | 3 | [`test.none`](#testnone) |
+| `0010` | `001` | 3 | [`test.any`](#testany) |
+| `0010` | `010` | 3 | [`test.all`](#testall) |
+
+| `cw` | modifier |
+| --- | --- |
+| `00` | default |
+| `01` | and |
+| `11` | or |
+
+### 2 regs
+![2 regs](./ref-assets/2_regs_enc.svg)
+
+| `op` | instruction |
+| ---- | --- |
+| `000000` | [`cnt`](#cnt) |
+| `000001` | [`cntz`](#cntz) |
+| `000010` | [`abs`](#abs) |
+| `000011` | [`cls`](#cls) |
+| `000100` | [`clz`](#clz) |
+| `000101` | [`clo`](#clo) |
+| `000110` | [`ctz`](#ctz) |
+| `000111` | [`cto`](#cto) |
+| `001000` | [`rev`](#rev) |
+| `001001` | [`rev.32`](#reverse-parts) |
+| `001010` | [`rev.16`](#reverse-parts) |
+| `001011` | [`rev.8`](#reverse-parts) |
+| `001101` | [`se.32`](#signed-extend) |
+| `001110` | [`se.16`](#signed-extend) |
+| `001111` | [`se.8`](#signed-extend) |
+
+### 4 regs
+#### format 1
+![4 regs format 1](./ref-assets/4_regs_f1_enc.svg)
+
+#### format 2
+![4 regs format 2](./ref-assets/4_regs_f2_enc.svg)
+
+#### format 3
+![4 regs format 3](./ref-assets/4_regs_f3_enc.svg)
+
+| `op` | format | instruction |
+| ---- | --- | --- |
+| `0000` | 2 | [`add.carry`](#addcarry) |
+| `0001` | 2 | [`sub.borrow`](#subborrow) |
+| `0010` | 1 | [`add` tripple](#add-tripple) |
+| `0011` | 1 | [`madd`](#madd) |
+| `0100` | 1 | [`msub`](#msub) |
+| `0101` | 1 | [`mul.full`](#multfull) |
+| `0110` | 1 | [`div.full`](#divfull) |
+| `0111` | 1 | [`udiv.full`](#udivfull) |
+| `1000` | 1 | [`fush`](#fush) |
+| `1001` | 1 | [`bfext`](#bfext) |
+| `1010` | 1 | [`bfins`](#bfins) |
+| `1011` | 3 | [`sel`](#sel) |
+
+### shift
+![shift](./ref-assets/shift_enc.svg)
+
+| `o1` | `op2` | instruction |
+| --- | --- | --- |
+| `0` | `000` | [`add`](#add-shifted-register) |
+| `0` | `001` | [`sub`](#sub-shifted-register) |
+| `0` | `010` | [`sub` reverse](#sub-reverse-shifted-register) |
+| `1` | `000` | [`and`](#and-shifted-register) |
+| `1` | `001` | [`or`](#or-shifted-register) |
+| `1` | `010` | [`xor`](#xor-shifted-register) |
+| `1` | `011` | [`imply`](#imply-shifted-register) |
+| `1` | `100` | [`nand`](#nand-shifted-register) |
+| `1` | `101` | [`nor`](#nor-shifted-register) |
+| `1` | `110` | [`xnor`](#xnor-shifted-register) |
+| `1` | `111` | [`bcr`](#bit-clear-shifted-register) |
+
+| `sh` | shift |
+| --- | --- |
+| `00` | `shl` |
+| `01` | `shr` |
+| `10` | `sar` |
+| `11` | `rol` |

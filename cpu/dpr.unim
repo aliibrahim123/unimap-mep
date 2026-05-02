@@ -172,10 +172,10 @@ fn exec_2regs (inst, state) => dec_2reg(inst[5],inst[6], inst[7]): {
 
 fn exec_4regs (inst, state) => dec_4reg(inst[3], inst[4], inst[5], inst[6], inst[7]): {
 	[let dst, let src1, let src2, let src3] => inst[2]: {
-		// add.carry dst:reg, src1:reg, src2:reg, carry:reg
+		// add.carry dst:reg, src1:reg, src2:reg, carry:cond
 		0 => add_op(state.regs[src1], state.regs[src2], read_cond(state, src3))
 			|> write_cond(write_reg(state, dst, _[0]), src3, _[1]),
-		// sub.borrow dst:reg, src1:reg, src2:reg, borrow:reg
+		// sub.borrow dst:reg, src1:reg, src2:reg, borrow:cond
 		1 => sub_borrow(state.regs[src1], state.regs[src2], read_cond(state, src3))
 			|> write_cond(write_reg(state, dst, _[0]), src3, _[1]),
 		// add3 dst:reg, src1:reg, src2:reg, src3:reg

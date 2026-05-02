@@ -41,6 +41,13 @@ let sz = { name: "sz", width: 2 };
 let logic_imd = [u6_imd("ones"), u6_imd("rot")];
 let l0 = { name: "l0", width: 1 };
 
+let x = (bits) => ({ value: "x".repeat(bits), width: bits });
+let f1 = (name) => ({ name, width: 1 });
+let f3 = (name) => ({ name, width: 3 });
+let f4 = (name) => ({ name, width: 4 });
+let f5 = (name) => ({ name, width: 5 });
+let f6 = (name) => ({ name, width: 6 });
+
 export default [
 	{
 		name: "add",
@@ -363,5 +370,37 @@ export default [
 	}, {
 		name: "halt",
 		fields: [op_branch, b4(0), { value: 0, width: 24 }]
-	}
+	},
+
+	{
+		name: "root_enc",
+		fields: [{ name: "pgrp" }, x(28)]
+	}, {
+		name: "dpr_enc",
+		fields: [op_dpr, f4("grp"), x(24)]
+	}, {
+		name: "3_regs_f1_enc",
+		fields: [op_dpr, dpr_3reg, f4("sub_grp"), f5("op"), gpr("dst"), gpr("src1"), gpr("src2")]
+	}, {
+		name: "3_regs_f2_enc",
+		fields: [op_dpr, dpr_3reg, f4("sub_grp"), f5("op"), gpr("dst"), cond("src1"), gpr("src2")]
+	}, {
+		name: "3_regs_f3_enc",
+		fields: [op_dpr, dpr_3reg, f4("sub_grp"), f3("op"), cw, cond("dst"), gpr("src1"), gpr("src2")]
+	}, {
+		name: "2_regs_enc",
+		fields: [op_dpr, dpr_2reg, b8(0), f6("op"), gpr("dst"), gpr("src")]
+	}, {
+		name: "4_regs_f1_enc",
+		fields: [op_dpr, dpr_4reg, f4("op"), gpr("dst"), gpr("src1"), gpr("src2"), gpr("src3")]
+	}, {
+		name: "4_regs_f2_enc",
+		fields: [op_dpr, dpr_4reg, f4("op"), gpr("dst"), gpr("src1"), gpr("src2"), cond("src3")]
+	}, {
+		name: "4_regs_f3_enc",
+		fields: [op_dpr, dpr_4reg, f4("op"), gpr("dst"), cond("src1"), gpr("src2"), gpr("src3")]
+	}, {
+		name: "shift_enc",
+		fields: [op_dpr, f3("op2"), b1(1), ...sh_op, f1("o1"), gpr("dst"), gpr("src1"), gpr("src2")]
+	},
 ];
