@@ -118,16 +118,21 @@ each instruction can have 0 or more operands separated by `,`.
 add r3, r1, r2
 ```
 
-### instruction discription
+### instruction decleration
 ```gramex
-let inst_disc = mnemonic list<ident "?"? ":" oprand_type, ",">?;
+let inst_decl = mnemonic ("{" list<"_" | "." ident, ","> "}")? list<ident "?"? ":" oprand_type, ",">?;
 ```
-instruction discriptions found in this document are composed of the intruction mnemonic followed by its operands discription separated by `,`.
+instruction declerations found in this document are composed of the intruction mnemonic followed by its operands decleration separated by `,`.
 
-an oprand discription consist of the oprand identifier followed by its type, an oprand is optional is its identifier is suffixed with `?`.
+an instruction decleration can declare multiple sub / modified instructions by suffixing the mnemonic with a variant decleration.
+
+the variant decleration is a comma separated list of variant suffixes enclosed inside curly brackets, a suffix can be a `_` (default variant) or a `.` followed by an identifier.
+
+an oprand decleration consist of the oprand identifier followed by its type, an oprand is optional is its identifier is suffixed with `?`.
 
 ```
 add dst:gpr, src1:gpr, src2:u12_imd
+comp.eq{_, .and, .or} dst:cond, src1:gpr, src2:gpr
 ```
 
 ### opreands
@@ -367,6 +372,16 @@ some instructions take a shifted register oprand, it is encoded in 3 fields: a `
 - `10`: arithmetic right (`sar`)
 - `11`: rotate left (`rol`)
 
+### options
+`cw` is a 2 bit field that modifies how a condition is written, it can be:
+- **default (`00`)**: overwrite distination register with the computed condition.
+- **and (`01`)**: and the computed condition with the distination register condition.
+- **or (`11`)**: or the computed condition with the distination register condition.
+
+`ca` is a 1 bit field that modifies how a condition is written, it can be:
+- **default (`0`)**: overwrite distination register with the computed condition.
+- **and (`1`)**: and the computed condition with the distination register condition.
+
 # arithmatic instructions
 ## addition
 ### add (shifted register)
@@ -375,7 +390,7 @@ add dst:gpr, src1:gpr, src2:sh_reg
 ```
 ![add encoding](./ref-assets/add.svg)
 
-adds register `src1` and optionally shifted register `src2` and stores the result in `dst` register.
+adds register `src1` and optionally shifted register `src2` and writes the result to `dst` register.
 
 ### add (immediate)
 ```
@@ -383,7 +398,7 @@ add dst:gpr, src1:gpr_pc, src2:u12_imd
 ```
 ![add imd encoding](./ref-assets/add_imd.svg)
 
-adds register / `PC` (`src1`) and immediate `src2` and stores the result in `dst` register.
+adds register / `PC` (`src1`) and immediate `src2` and writes the result to `dst` register.
 
 ### add.carry
 ```
@@ -391,7 +406,7 @@ add.carry dst:gpr, src1:gpr, src2:gpr, carry:cond
 ```
 ![add.carry encoding](./ref-assets/add_carry.svg)
 
-adds registers `src1` and `src2` with carry flag in `carry` register and stores the result in `dst` register, then updates the `carry` register.
+adds registers `src1` and `src2` with carry flag in `carry` register and writes the result to `dst` register, then updates the `carry` register.
 
 ### add tripple
 ```
@@ -399,7 +414,15 @@ add dst:gpr, src1:gpr, src2:gpr, src3:gpr
 ```
 ![add3 encoding](./ref-assets/add3.svg)
 
-adds registers `src1`, `src2` and `src3` and stores the result in `dst` register.
+adds registers `src1`, `src2` and `src3` and writes the result to `dst` register.
+
+### cinc
+```
+cinc dst:gpr, cond:cond, src:gpr
+```
+![cinc encoding](./ref-assets/cinc.svg)
+
+write to `dst` register the `src` register incremented by `1` if `cond` register is `true`, otherwise move `src` without modification.
 
 ## subtract
 ### sub (shifted register)
@@ -408,7 +431,7 @@ sub dst:gpr, src1:gpr, src2:sh_reg
 ```
 ![sub encoding](./ref-assets/sub.svg)
 
-subtracts optionally shifted register `src2` from register `src1` and stores the result in `dst` register.
+subtracts optionally shifted register `src2` from register `src1` and writes the result to `dst` register.
 
 ### sub reverse (shifted register)
 ```
@@ -416,7 +439,7 @@ sub dst:gpr, src1:sh_reg, src2:gpr
 ```
 ![sub rev encoding](./ref-assets/sub_rev.svg)
 
-subtracts register `src2` from optionally shifted register `src1` and stores the result in `dst` register.
+subtracts register `src2` from optionally shifted register `src1` and writes the result to `dst` register.
 
 ### sub (immediate)
 ```
@@ -424,7 +447,7 @@ sub dst:gpr, src1:gpr, src2:u12_imd
 ```
 ![sub imd encoding](./ref-assets/sub_imd.svg)
 
-subtracts immediate `src2` from register `src1` and stores the result in `dst` register.
+subtracts immediate `src2` from register `src1` and writes the result to `dst` register.
 
 ### sub reverse (immediate)
 ```
@@ -432,7 +455,7 @@ sub dst:gpr, src1:u12_imd, src2:gpr
 ```
 ![sub rev imd encoding](./ref-assets/sub_rev_imd.svg)
 
-subtracts register `src2` from immediate `src1` and stores the result in `dst` register.
+subtracts register `src2` from immediate `src1` and writes the result to `dst` register.
 
 ### sub.borrow
 ```
@@ -440,7 +463,7 @@ sub.borrow dst:gpr, src1:gpr, src2:gpr, borrow:cond
 ```
 ![sub.borrow encoding](./ref-assets/sub_borrow.svg)
 
-subtracts register `src2` from `src1` with borrow flag in `borrow` register and stores the result in `dst` register, then updates the `borrow` register.
+subtracts register `src2` from `src1` with borrow flag in `borrow` register and writes the result to `dst` register, then updates the `borrow` register.
 
 ## multiplication
 ### mult
@@ -449,7 +472,7 @@ mult dst:gpr, src1:gpr, src2:gpr
 ```
 ![mult encoding](./ref-assets/mult.svg)
 
-multiplies registers `src1` by `src2` and stores the result in `dst` register.
+multiplies registers `src1` by `src2` and writes the result to `dst` register.
 
 it is an alias for `mult.full`
 
@@ -459,7 +482,7 @@ mult.full plow:gpr, phigh:gpr, src1:gpr, src2:gpr
 ```
 ![mult.full encoding](./ref-assets/mult_full.svg)
 
-multiplies registers `src1` by `src2` to produce a full 128 bit product, then store the low 64 bits in `plow` register and the high 64 bits in `phigh` register.
+multiplies registers `src1` by `src2` to produce a full 128 bit product, then writes the low and 64 bits to `plow` and `phigh` registers respectively.
 
 ### madd
 ```
@@ -467,7 +490,7 @@ madd dst:gpr, src1:gpr, src2:gpr, src3:gpr
 ```
 ![madd encoding](./ref-assets/madd.svg)
 
-multiplies registers `src1` by `src2` and adds register `src3` to the product and stores the result in `dst` register.
+multiplies registers `src1` by `src2` and adds register `src3` to the product and writes the result to `dst` register.
 
 ### msub
 ```
@@ -475,7 +498,7 @@ msub dst:gpr, src1:gpr, src2:gpr, src3:gpr
 ```
 ![msub encoding](./ref-assets/msub.svg)
 
-multiplies registers `src1` by `src2` and subtracts the product from register `src3` and stores the result in `dst` register.
+multiplies registers `src1` by `src2` and subtracts the product from register `src3` and writes the result to `dst` register.
 
 ## division
 ### div
@@ -484,7 +507,7 @@ div dst:gpr, src1:gpr, src2:gpr
 ```
 ![div encoding](./ref-assets/div.svg)
 
-divides registers `src1` by `src2` and stores the quotient in `dst` register.
+divides registers `src1` by `src2` and writes the quotient to `dst` register.
 
 it is an alias for `div.full`
 
@@ -494,7 +517,7 @@ rem dst:gpr, src1:gpr, src2:gpr
 ```
 ![rem encoding](./ref-assets/rem.svg)
 
-computes the remainder of register `src1` divided by register `src2` and stores the result in `dst` register.
+computes the remainder of register `src1` divided by register `src2` and writes the result to `dst` register.
 
 it is an alias for `div.full`
 
@@ -504,7 +527,7 @@ div.full quo:gpr, rem:gpr, src1:gpr, src2:gpr
 ```
 ![div.full encoding](./ref-assets/div_full.svg)
 
-divides registers `src1` by `src2` then stores the quotient in `quo` register and the remainder in `rem` register.
+divides registers `src1` by `src2` then writes the quotient to `quo` register and the remainder to `rem` register.
 
 ### udiv
 ```
@@ -512,7 +535,7 @@ udiv dst:gpr, src1:gpr, src2:gpr
 ```
 ![udiv encoding](./ref-assets/udiv.svg)
 
-unsigned divide registers `src1` by `src2` and stores the quotient in `dst` register.
+unsigned divide registers `src1` by `src2` and writes the quotient to `dst` register.
 
 it is an alias for `udiv.full`
 
@@ -522,7 +545,7 @@ urem dst:gpr, src1:gpr, src2:gpr
 ```
 ![urem encoding](./ref-assets/urem.svg)
 
-unsigned remainder of register `src1` divided by register `src2` and stores the result in `dst` register.
+unsigned remainder of register `src1` divided by register `src2` and writes the result to `dst` register.
 
 it is an alias for `udiv.full`
 
@@ -532,9 +555,171 @@ udiv.full quo:gpr, rem:gpr, src1:gpr, src2:gpr
 ```
 ![udiv.full encoding](./ref-assets/udiv_full.svg)
 
-unsigned divide registers `src1` by `src2` then stores the quotient in `quo` register and the remainder in `rem` register.
+unsigned divide registers `src1` by `src2` then writes the quotient to `quo` register and the remainder to `rem` register.
 
-# sign processing instructions
+# sign and comparison instructions
+## unary operations
+### abs
+```
+abs dst:gpr, src:gpr
+```
+![abs encoding](./ref-assets/abs.svg)
+
+computes the absolute value of register `src` and writes the result to `dst` register.
+
+### neg
+```
+neg dst:gpr, src:sh_reg
+```
+![neg encoding](./ref-assets/neg.svg)
+
+negates an optionally shifted register `src` and writes the result to `dst` register.
+
+it is an alias for `sub`
+
+### cneg
+```
+cneg dst:gpr, cond:cond, src:gpr
+```
+![cneg encoding](./ref-assets/cneg.svg)
+
+write to `dst` register the negation of `src` register if `cond` register is `true`, otherwise move `src` without modification.
+
+## min / max
+### min
+```
+min dst:gpr, src1:gpr, src2:gpr
+```
+![min encoding](./ref-assets/min.svg)
+
+determines the signed minimum of registers `src1` and `src2` and writes it to `dst` register.
+
+### max
+```
+max dst:gpr, src1:gpr, src2:gpr
+```
+![max encoding](./ref-assets/max.svg)
+
+determines the signed maximum of registers `src1` and `src2` and writes it to `dst` register.
+
+### umin
+```
+umin dst:gpr, src1:gpr, src2:gpr
+```
+![umin encoding](./ref-assets/umin.svg)
+
+determines the unsigned minimum of registers `src1` and `src2` and writes it to `dst` register.
+
+### umax
+```
+umax dst:gpr, src1:gpr, src2:gpr
+```
+![umax encoding](./ref-assets/umax.svg)
+
+determines the unsigned maximum of registers `src1` and `src2` and writes it to `dst` register.
+
+## equality comparison
+### comp.eq
+```
+comp.eq{_, .and, .or} dst:cond, src1:gpr, src2:gpr
+```
+![comp.eq encoding](./ref-assets/comp_eq.svg)
+
+determines if registers `src1` and `src2` are equal and writes the result condition to `dst` register.
+
+this instruction can optionally and / or the computed condition with `dst`.
+
+### comp.ne
+```
+comp.ne{_, .and, .or} dst:cond, src1:gpr, src2:gpr
+```
+![comp.ne encoding](./ref-assets/comp_ne.svg)
+
+determines if registers `src1` and `src2` are not equal and writes the result condition to `dst` register.
+
+this instruction can optionally and / or the computed condition with `dst`.
+
+### comp.eq immediate
+```
+comp.eq{_, .and} dst:cond, src1:gpr, src2:s12_imd
+```
+![comp.eq imd encoding](./ref-assets/comp_eq_imd.svg)
+
+determines if register `src1` is equal to immediate `src2` and writes the result condition to `dst` register.
+
+this instruction can optionally and the computed condition with `dst`.
+
+### comp.ne immediate
+```
+comp.ne{_, .and} dst:cond, src1:gpr, src2:s12_imd
+```
+![comp.ne imd encoding](./ref-assets/comp_ne_imd.svg)
+
+determines if register `src1` is not equal to immediate `src2` and writes the result condition to `dst` register.
+
+this instruction can optionally and the computed condition with `dst`.
+
+## signed comparison
+### comp.gt
+```
+comp.gt{_, .and, .or} dst:cond, src1:gpr, src2:gpr
+```
+![comp.gt encoding](./ref-assets/comp_gt.svg)
+
+determines if register `src1` is greater than register `src2` and writes the result condition to `dst` register.
+
+this instruction can optionally and / or the computed condition with `dst`.
+
+### comp.le
+```
+comp.le{_, .and, .or} dst:cond, src1:gpr, src2:gpr
+```
+![comp.le encoding](./ref-assets/comp_le.svg)
+
+determines if register `src1` is less than or equal to register `src2` and writes the result condition to `dst` register.
+
+this instruction can optionally and / or the computed condition with `dst`.
+
+### comp.gt immediate
+```
+comp.gt{_, .and} dst:cond, src1:gpr, src2:s12_imd
+```
+![comp.gt imd encoding](./ref-assets/comp_gt_imd.svg)
+
+determines if register `src1` is greater than immediate `src2` and writes the result condition to `dst` register.
+
+this instruction can optionally and the computed condition with `dst`.
+
+## unsigned comparison
+### ucomp.gt
+```
+ucomp.gt{_, .and, .or} dst:cond, src1:gpr, src2:gpr
+```
+![ucomp.gt encoding](./ref-assets/ucomp_gt.svg)
+
+determines if register `src1` is unsignly greater than register `src2` and writes the result condition to `dst` register.
+
+this instruction can optionally and / or the computed condition with `dst`.
+
+### ucomp.le
+```
+ucomp.le{_, .and, .or} dst:cond, src1:gpr, src2:gpr
+```
+![ucomp.le encoding](./ref-assets/ucomp_le.svg)
+
+determines if register `src1` is unsignly less than or equal to register `src2` and writes the result condition to `dst` register.
+
+this instruction can optionally and / or the computed condition with `dst`.
+
+### ucomp.gt immediate
+```
+ucomp.gt{_, .and} dst:cond, src1:gpr, src2:u12_imd
+```
+![ucomp.gt imd encoding](./ref-assets/ucomp_gt_imd.svg)
+
+determines if register `src1` is unsignly greater than immediate `src2` and writes the result condition to `dst` register.
+
+this instruction can optionally and the computed condition with `dst`.
 
 # logical instructions
 
