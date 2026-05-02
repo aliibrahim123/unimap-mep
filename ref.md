@@ -192,12 +192,16 @@ or r4, r1, r3 rol 31
 ### immediate oprands
 ```gramex
 let imd = ("+" | "-")? nb | logic_imd;
-let imd_type = "u2_imd" | "u6_imd" | "u12_imd" | "u16_imd" | "s9_imd" | "s10_imd" | "s12_imd" | "s19_imd" | "s24_imd" | "logic_imd";
+let imd_type = 
+	"u2_imd" | "u3_imd" | "u6_imd" | "u12_imd" | "u16_imd"
+	| "s9_imd" | "s10_imd" | "s12_imd" | "s19_imd" | "s24_imd" 
+	| "logic_imd"
+;
 ```
 immediate oprands are integer literals that get encoded directly into the instructions.
 
 they can be unsigned or unsigned and of different sizes, the available sizes are:
-- for unsigned immediates: 2 bits (`u2_imd`), 6 bits (`u6_imd`), 12 bits (`u12_imd`), 16 bits (`u16_imd`).
+- for unsigned immediates: 2 bits (`u2_imd`), 3 bits (`u3_imd`), 6 bits (`u6_imd`), 12 bits (`u12_imd`), 16 bits (`u16_imd`).
 - for signed immediates: 9 bits (`s9_imd`), 10 bits (`s10_imd`), 12 bits (`s12_imd`), 19 bits (`s19_imd`) and 24 bits (`s24_imd`).
 
 the sign is forbidden for unsigned immediates and required for signed ones.
@@ -360,7 +364,7 @@ registers are encoded inside 5 bit fields called `gpr` based on their index.
 immediates are encoded directly inside instructions in fields of various sizes.
 
 the immediates fields with their fields are:
-- for unsigned immediates: `u2_imd` (2 bits), `u6_imd` (6 bits), `u12_imd` (12 bits).
+- for unsigned immediates: `u2_imd` (2 bits), `u3_imd` (3 bits), `u6_imd` (6 bits), `u12_imd` (12 bits).
 - for signed immediates: `s9_imd` (9 bits), `s10_imd` (10 bits), `s12_imd` (12 bits), `s19_imd` (19 bits) and `s24_imd` (24 bits).
 
 signed immediates are encoded in twos complement, and all immediates are contiguous inside the instruction except for `s9_imd` where the sign bit is encoded separately.
@@ -1298,3 +1302,58 @@ ld{.s32, .s16, .s8} dst:gpr, loc:base_index
 loads from memory the 32, 16 or 8 bits value at address `loc` and writes the signed extended result to `dst` register.
 
 # control flow instructions
+## branches
+### br
+```
+br offset:s24_imd
+```
+![br encoding](./ref-assets/br.svg)
+
+unconditional branch by a `pc` relative `offset` scaled by 4 bytes.
+
+### br (link)
+```
+br link:gpr, offset:s19_imd
+```
+![br link encoding](./ref-assets/br_link.svg)
+
+stores the address of the next instruction in `link` register then unconditional branch by a `pc` relative `offset` scaled by 4 bytes.
+
+### br (cond)
+```
+br{.true, .false} cond:cond, offset:s19_imd
+```
+![br.cond encoding](./ref-assets/br_cond.svg)
+
+branch by a `pc` relative `offset` scaled by 4 bytes based on `cond` register.
+
+if `c` field is `1`, branch is taken if `cond` is `true`, otherwise the inverse.
+
+## jumps
+### jmp (base + index)
+```
+jmp link?:gpr, loc:base_index
+```
+![jmp index encoding](./ref-assets/jmp_index.svg)
+
+stores the address of the next instruction in `link` register then uncoditional branch to address `loc`.
+
+`loc` is computed from a `base` register plus an `index` register scaled by 4 bytes and further shifted by `sh` field.
+
+### jmp (base + offset)
+```
+jmp link?:gpr, loc:base_offset
+```
+![jmp offset encoding](./ref-assets/jmp_offset.svg)
+
+stores the address of the next instruction in `link` register then uncoditional branch to address `loc`.
+
+`loc` is computed from a `base` register plus a `s10_imd` `offset` scaled by 4 bytes.
+
+### halt
+```
+halt
+```
+![halt encoding](./ref-assets/halt.svg)
+
+halt and end execution without catching on fire.

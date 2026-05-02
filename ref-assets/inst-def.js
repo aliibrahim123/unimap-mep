@@ -10,16 +10,20 @@ let gpr = (name) => ({ name, type: "gpr", width: 5 });
 let gpr_pc = (name) => ({ name, type: "gpr_pc", width: 5 });
 let cond = (name) => ({ name, type: "cond", width: 5 });
 let u2_imd = (name) => ({ name, type: "u2_i", width: 2 });
+let u3_imd = (name) => ({ name, type: "u3_imd", width: 3 });
 let u6_imd = (name) => ({ name, type: "u6_imd", width: 6 });
 let u12_imd = (name) => ({ name, type: "u12_imd", width: 12 });
 let u16_imd = (name) => ({ name, type: "u16_imd", width: 16 });
 let s9_imd = (name) => ({ name, type: "s9_imd", width: 8 });
+let s10_imd = (name) => ({ name, type: "s10_imd", width: 10 });
 let s12_imd = (name) => ({ name, type: "s12_imd", width: 12 });
 let s19_imd = (name) => ({ name, type: "s19_imd", width: 19 });
+let s24_imd = (name) => ({ name, type: "s24_imd", width: 24 });
 
 let op_dpr = b4(1);
 let op_dpi = b4(2);
 let op_mem = b4(3);
+let op_branch = b4(4);
 let dpr_3reg = b4(0);
 let dpr_2reg = b4(1);
 let dpr_4reg = b4(2);
@@ -341,5 +345,23 @@ export default [
 	}, {
 		name: "ld_s_base_index",
 		fields: [op_mem, b2(2), b6(0), b2(2), sz, "s", gpr("reg"), gpr("base"), gpr("index")]
-	},
+	}, {
+		name: "br",
+		fields: [op_branch, b4(0), s24_imd("offset")]
+	}, {
+		name: "br_link",
+		fields: [op_branch, b4(1), s19_imd("offset"), gpr("link")]
+	}, {
+		name: "br_cond",
+		fields: [op_branch, "c", b3(1), s19_imd("offset"), cond("cond")]
+	}, {
+		name: "jmp_index",
+		fields: [op_branch, b4(4), b4(0), b2(0), u3_imd("sh"), gpr("base"), gpr("index"), gpr("link")]
+	}, {
+		name: "jmp_offset",
+		fields: [op_branch, b4(4), b4(1), s10_imd("offset"), gpr("base"), gpr("link")]
+	}, {
+		name: "halt",
+		fields: [op_branch, b4(0), { value: 0, width: 24 }]
+	}
 ];
