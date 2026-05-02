@@ -1,6 +1,6 @@
 import math.tables { and_dg, or_dg, xor_dg };
 import math.nb { zero };
-import math.arith { add8 };
+import math.arith { add8, sub8 };
 import math.comp { sign, neg, pos };
 
 fn not_dg (a) => a: {
@@ -93,7 +93,7 @@ fn clz (nb) => nb: { zero => [0, 4], _ => clz_loop(nb, 15, [0, 0]) };
 fn cto (nb) => ctz(not(nb));
 fn clo (nb) => clz(not(nb));
 // count leading sign
-fn cls (nb) => sign(nb): { pos => clz(nb), neg => clo(nb) };
+fn cls (nb) => sub8(sign(nb): { pos => clz(nb), neg => clo(nb) }, [1, 0]);
 
 fn rev_dg (dg) => dg: {
 	0 => 0, 1 => 8, 2  => 4, 3  => 12, 4  => 2, 5  => 10, 6  => 6, 7  => 14, 

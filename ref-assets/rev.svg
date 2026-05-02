@@ -47,17 +47,15 @@
   <text x="470.3125" y="50" class="content-fixed">0</text>
   <text x="492.1875" y="50" class="content-fixed">0</text>
   <text x="514.0625" y="50" class="content-fixed">0</text>
-  <rect x="306.25" y="25" width="43.75" height="40" class="box-line" />
-  <text x="310.25" y="15" text-anchor="start" class="bit-idx">17</text>
-  <text x="346" y="15" text-anchor="end" class="bit-idx">16</text>
-  <text x="328.125" y="50" class="content-var">sz</text>
-  <rect x="218.75" y="25" width="87.5" height="40" class="box-line" />
+  <rect x="218.75" y="25" width="131.25" height="40" class="box-line" />
   <text x="222.75" y="15" text-anchor="start" class="bit-idx">21</text>
-  <text x="302.25" y="15" text-anchor="end" class="bit-idx">18</text>
+  <text x="346" y="15" text-anchor="end" class="bit-idx">16</text>
   <text x="229.6875" y="50" class="content-fixed">0</text>
   <text x="251.5625" y="50" class="content-fixed">0</text>
   <text x="273.4375" y="50" class="content-fixed">1</text>
-  <text x="295.3125" y="50" class="content-fixed">1</text>
+  <text x="295.3125" y="50" class="content-fixed">0</text>
+  <text x="317.1875" y="50" class="content-fixed">0</text>
+  <text x="339.0625" y="50" class="content-fixed">0</text>
   <rect x="109.375" y="25" width="109.375" height="40" class="box-line" />
   <text x="113.375" y="15" text-anchor="start" class="bit-idx">26</text>
   <text x="214.75" y="15" text-anchor="end" class="bit-idx">22</text>

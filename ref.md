@@ -105,7 +105,7 @@ loop_start:
 
 ## instructions
 ```gramex
-let mnemonic = list<ident, ".">;
+let mnemonic = list<ident | nb, ".">;
 let inst = mnemonic list<oprand, ",">?;
 ```
 an instruction consists of its mnemonic followed by its operands.
@@ -120,7 +120,7 @@ add r3, r1, r2
 
 ### instruction decleration
 ```gramex
-let inst_decl = mnemonic ("{" list<"_" | "." ident, ","> "}")? list<ident "?"? ":" oprand_type, ",">?;
+let inst_decl = mnemonic ("{" list<"_" | "." (ident | nb), ","> "}")? list<ident "?"? ":" oprand_type, ",">?;
 ```
 instruction declerations found in this document are composed of the intruction mnemonic followed by its operands decleration separated by `,`.
 
@@ -364,6 +364,8 @@ the immediates fields with their fields are:
 - for signed immediates: `s9_imd` (9 bits), `s10_imd` (10 bits), `s12_imd` (12 bits), `s19_imd` (19 bits) and `s24_imd` (24 bits).
 
 signed immediates are encoded in twos complement, and all immediates are contiguous inside the instruction except for `s9_imd` where the sign bit is encoded separately.
+
+some immediates are scaled, the decoder will shift the immediate up to be aligned with the data width before execution.
 
 ### shifted register
 some instructions take a shifted register oprand, it is encoded in 3 fields: a `gpr` for the register, a `u6_imd` for the shift amount and a `sh` that specifies the shift type.
@@ -609,11 +611,11 @@ write to `dst` register the negation of `src` register if `cond` register is `tr
 
 ### signed extend
 ```
-se{.s32, .s16, .s8} dst:gpr, src:gpr
+se{.8, .16, .32} dst:gpr, src:gpr
 ```
 ![se encoding](./ref-assets/se.svg)
 
-signed extends register `src` to 32, 16 or 8 bits and writes the result to `dst` register.
+signed extends register `src` to 8, 16 or 32 bits and writes the result to `dst` register.
 
 ## min / max
 ### min
@@ -762,6 +764,14 @@ not dst:gpr, src:sh_reg
 inverts optionally shifted register `src` and writes the result to `dst` register.
 
 it is an alias for `xnor dst, r0, src`.
+
+### cnot
+```
+cnot dst:gpr, cond:cond, src:reg
+```
+![cnot encoding](./ref-assets/cnot.svg)
+
+write to `dst` register the inverse of `src` register if `cond` register is `true`, otherwise move `src` without modification.
 
 ### and (shifted register)
 ```
@@ -955,9 +965,198 @@ determines if all bits in register `src` specified by logical immediate `mask` a
 this instruction can optionally and the computed condition with `dst`.
 
 # bit manipulation instructions
+## shifts
+### shl
+```
+shl dst:gpr, src:gpr, amount:gpr
+```
+![shl encoding](./ref-assets/shl.svg)
+
+logicaly left shifts register `src` by register `amount` modulo 64 and writes the result to `dst` register.
+
+this is an alias for `fush dst, src, r0, amount`.
+
+### shl (immediate)
+```
+shl dst:gpr, src:gpr, amount:u6_imd
+```
+![shl imd encoding](./ref-assets/shl_imd.svg)
+
+logicaly left shifts register `src` by immediate `amount` and writes the result to `dst` register.
+
+this is an alias for `or dst, r0, src shl amount`.
+
+### shr
+```
+shr dst:gpr, src:gpr, amount:gpr
+```
+![shr encoding](./ref-assets/shr.svg)
+
+logicaly right shifts register `src` by register `amount` modulo 64 and writes the result to `dst` register.
+
+### shr (immediate)
+```
+shr dst:gpr, src:gpr, amount:u6_imd
+```
+![shr imd encoding](./ref-assets/shr_imd.svg)
+
+logicaly right shifts register `src` by immediate `amount` and writes the result to `dst` register.
+
+this is an alias for `or dst, r0, src shr amount`.
+
+### sar
+```
+sar dst:gpr, src:gpr, amount:gpr
+```
+![sar encoding](./ref-assets/sar.svg)
+
+arithmeticly right shifts register `src` by register `amount` modulo 64 and writes the result to `dst` register.
+
+### sar (immediate)
+```
+sar dst:gpr, src:gpr, amount:u6_imd
+```
+![sar imd encoding](./ref-assets/sar_imd.svg)
+
+arithmeticly right shifts register `src` by immediate `amount` and writes the result to `dst` register.
+
+this is an alias for `or dst, r0, src sar amount`.
+
+### rol
+```
+rol dst:gpr, src:gpr, amount:gpr
+```
+![rol encoding](./ref-assets/rol.svg)
+
+rotate left register `src` by register `amount` modulo 64 and writes the result to `dst` register.
+
+this is an alias for `fush dst, src, src, amount`.
+
+### rol (immediate)
+```
+rol dst:gpr, src:gpr, amount:u6_imd
+```
+![rol imd encoding](./ref-assets/rol_imd.svg)
+
+rotate left register `src` by immediate `amount` and writes the result to `dst` register.
+
+this is an alias for `or dst, r0, src rol amount`.
+
+### fush
+```
+fush dst:gpr, src:gpr, carry:gpr, amount:gpr
+```
+![fush encoding](./ref-assets/fush.svg)
+
+funnel left shift register `src` by register `amount` modulo 64 taking carry from `carry` register and writes the result to `dst` register.
+
+## bitfield
+### bfext
+```
+bfext dst:gpr, src:gpr, offset:gpr, width:gpr
+```
+![bfext encoding](./ref-assets/bfext.svg)
+
+extract from register `src` a bitfield of (register `width` modulo `64` + `1`) bits starting at bit position (register `offset` modulo 64) and writes the result to `dst` register.
+
+### bfext (immediate)
+```
+bfext dst:gpr, src:gpr, offset:u6_imd, width:u6_imd
+```
+![bfext imd encoding](./ref-assets/bfext_imd.svg)
+
+extract from register `src` a bitfield of (immediate `width` + `1`) bits starting at bit position specified by immediate `offset` and writes the result to `dst` register.
+
+### bfins
+```
+bfins dst:gpr, src:gpr, offset:gpr, width:gpr 
+```
+![bfins encoding](./ref-assets/bfins.svg)
+
+extract from register `src` a bitfield of (register `width` modulo `64` + `1`) bits starting from bit `0` and insert it in register `dst` at bit position (register `offset` modulo 64) without effecting the other bits.
+
+### bfins (immediate)
+```
+bfins dst:gpr, src:gpr, offset:u6_imd, width:u6_imd
+```
+![bfins imd encoding](./ref-assets/bfins_imd.svg)
+
+extract from register `src` a bitfield of (immediate `width` modulo `64` + `1`) bits starting from bit `0` and insert it in register `dst` at bit position specified by immediate `offset` without effecting the other bits.
+
+## bit counting
+### cnt
+```
+cnt dst:gpr, src:gpr
+```
+![cnt encoding](./ref-assets/cnt.svg)
+
+count the number of `1` bits in register `src` and writes the result to `dst` register.
+
+### cntz
+```
+cntz dst:gpr, src:gpr
+```
+![cntz encoding](./ref-assets/cntz.svg)
+
+count the number of `0` bits in register `src` and writes the result to `dst` register.
+
+### clz
+```
+clz dst:gpr, src:gpr
+```
+![clz encoding](./ref-assets/clz.svg)
+
+count the number of leading (most significant) `0` bits in register `src` and writes the result to `dst` register.
+
+### clo
+```
+clo dst:gpr, src:gpr
+```
+![clo encoding](./ref-assets/clo.svg)
+
+count the number of leading (most significant) `1` bits in register `src` and writes the result to `dst` register.
+
+### ctz
+```
+ctz dst:gpr, src:gpr
+```
+![ctz encoding](./ref-assets/ctz.svg)
+
+count the number of trailing (least significant) `0` bits in register `src` and writes the result to `dst` register.
+
+### cto
+```
+cto dst:gpr, src:gpr
+```
+![cto encoding](./ref-assets/cto.svg)
+
+count the number of trailing (least significant) `1` bits in register `src` and writes the result to `dst` register.
+
+### cls
+```
+cls dst:gpr, src:gpr
+```
+![cls encoding](./ref-assets/cls.svg)
+
+count the number of leading (most significant) bits with the same value as bit `63` in register `src` and writes the result to `dst` register.
+
+## reversion
+### rev
+```
+rev dst:gpr, src:gpr
+```
+![rev encoding](./ref-assets/rev.svg)
+
+reverse the bits in register `src` and writes the result to `dst` register.
+
+### reverse parts
+```
+rev{.8, .16, .32} dst:gpr, src:gpr
+```
+![rev parts encoding](./ref-assets/rev_parts.svg)
+
+reverse the order of 8, 16 or 32 bits parts in register `src` and writes the result to `dst` register.
 
 # data movement instructions
-
-# load / store instructions
 
 # control flow instructions

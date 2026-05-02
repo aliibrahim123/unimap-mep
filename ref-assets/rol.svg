@@ -34,40 +34,37 @@
   <text x="608.5" y="15" text-anchor="end" class="bit-idx">4</text>
   <text x="535.9375" y="50" class="content-fixed">0</text>
   <text x="557.8125" y="50" class="content-fixed">0</text>
-  <text x="579.6875" y="50" class="content-fixed">0</text>
-  <text x="601.5625" y="50" class="content-fixed">1</text>
-  <rect x="350" y="25" width="175" height="40" class="box-line" />
-  <text x="354" y="15" text-anchor="start" class="bit-idx">15</text>
+  <text x="579.6875" y="50" class="content-fixed">1</text>
+  <text x="601.5625" y="50" class="content-fixed">0</text>
+  <rect x="437.5" y="25" width="87.5" height="40" class="box-line" />
+  <text x="441.5" y="15" text-anchor="start" class="bit-idx">11</text>
   <text x="521" y="15" text-anchor="end" class="bit-idx">8</text>
-  <text x="360.9375" y="50" class="content-fixed">0</text>
-  <text x="382.8125" y="50" class="content-fixed">0</text>
-  <text x="404.6875" y="50" class="content-fixed">0</text>
-  <text x="426.5625" y="50" class="content-fixed">0</text>
-  <text x="448.4375" y="50" class="content-fixed">0</text>
+  <text x="448.4375" y="50" class="content-fixed">1</text>
   <text x="470.3125" y="50" class="content-fixed">0</text>
   <text x="492.1875" y="50" class="content-fixed">0</text>
   <text x="514.0625" y="50" class="content-fixed">0</text>
-  <rect x="306.25" y="25" width="43.75" height="40" class="box-line" />
-  <text x="310.25" y="15" text-anchor="start" class="bit-idx">17</text>
-  <text x="346" y="15" text-anchor="end" class="bit-idx">16</text>
-  <text x="328.125" y="50" class="content-var">sz</text>
-  <rect x="218.75" y="25" width="87.5" height="40" class="box-line" />
+  <rect x="328.125" y="25" width="109.375" height="40" class="box-line" />
+  <text x="332.125" y="15" text-anchor="start" class="bit-idx">16</text>
+  <text x="433.5" y="15" text-anchor="end" class="bit-idx">12</text>
+  <text x="382.8125" y="50" class="content-var">dst</text>
+  <rect x="328.125" y="65" width="109.375" height="24" class="box-type" />
+  <text x="382.8125" y="81" class="field-type">gpr</text>
+  <rect x="218.75" y="25" width="109.375" height="40" class="box-line" />
   <text x="222.75" y="15" text-anchor="start" class="bit-idx">21</text>
-  <text x="302.25" y="15" text-anchor="end" class="bit-idx">18</text>
-  <text x="229.6875" y="50" class="content-fixed">0</text>
-  <text x="251.5625" y="50" class="content-fixed">0</text>
-  <text x="273.4375" y="50" class="content-fixed">1</text>
-  <text x="295.3125" y="50" class="content-fixed">1</text>
+  <text x="324.125" y="15" text-anchor="end" class="bit-idx">17</text>
+  <text x="273.4375" y="50" class="content-var">src</text>
+  <rect x="218.75" y="65" width="109.375" height="24" class="box-type" />
+  <text x="273.4375" y="81" class="field-type">gpr</text>
   <rect x="109.375" y="25" width="109.375" height="40" class="box-line" />
   <text x="113.375" y="15" text-anchor="start" class="bit-idx">26</text>
   <text x="214.75" y="15" text-anchor="end" class="bit-idx">22</text>
-  <text x="164.0625" y="50" class="content-var">dst</text>
+  <text x="164.0625" y="50" class="content-var">src</text>
   <rect x="109.375" y="65" width="109.375" height="24" class="box-type" />
   <text x="164.0625" y="81" class="field-type">gpr</text>
   <rect x="0" y="25" width="109.375" height="40" class="box-line" />
   <text x="4" y="15" text-anchor="start" class="bit-idx">31</text>
   <text x="105.375" y="15" text-anchor="end" class="bit-idx">27</text>
-  <text x="54.6875" y="50" class="content-var">src</text>
+  <text x="54.6875" y="50" class="content-var">amount</text>
   <rect x="0" y="65" width="109.375" height="24" class="box-type" />
   <text x="54.6875" y="81" class="field-type">gpr</text>
 </svg>

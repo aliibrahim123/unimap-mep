@@ -24,6 +24,7 @@ let dpr_3r_g1 = b4(1);
 let dpr_3r_g2 = b4(2);
 
 let r0 = { value: "00000", type: "gpr", width: 5 };
+let sh = (value) => ({ value, type: "sh", width: 2 });
 let sh_op = [{ name: "sh", width: 2 }, u6_imd("sh_amount")];
 let cw = { name: "cw", width: 2 };
 let ca = { name: "ca", width: 1 };
@@ -103,7 +104,7 @@ export default [
 		fields: [op_dpr, dpr_3reg, dpr_3r_g0, b5(8), gpr("dst"), gpr("cond"), gpr("src")]
 	}, {
 		name: "se",
-		fields: [op_dpr, dpr_2reg, dpr_2r_g0, b2(3), sz, b2(0), gpr("dst"), gpr("src")]
+		fields: [op_dpr, dpr_2reg, dpr_2r_g0, sz, b4(3), gpr("dst"), gpr("src")]
 	}, {
 		name: "min",
 		fields: [op_dpr, dpr_3reg, dpr_3r_g0, b5(2), gpr("dst"), gpr("src1"), gpr("src2")]
@@ -149,6 +150,9 @@ export default [
 	}, {
 		name: "not",
 		fields: [op_dpr, b4(14), ...sh_op, b1(1), gpr("dst"), r0, gpr("src")]
+	}, {
+		name: "cnot",
+		fields: [op_dpr, dpr_3reg, dpr_3r_g0, b5(6), gpr("dst"), gpr("cond"), gpr("src")]
 	}, {
 		name: "and",
 		fields: [op_dpr, b4(8), ...sh_op, b1(1), gpr("dst"), gpr("src1"), gpr("src2")]
@@ -215,6 +219,71 @@ export default [
 	}, {
 		name: "test_all_imd",
 		fields: [op_dpi, b4(9), ca, l0, gpr("dst"), gpr("src"), ...logic_imd]
-	},
-
+	}, {
+		name: "shl",
+		fields: [op_dpr, dpr_4reg, b4(8), gpr("dst"), gpr("src"), r0, gpr("amount")]
+	}, {
+		name: "shl_imd",
+		fields: [op_dpr, b4(9), sh(0), u6_imd("amount"), b1(1), gpr("dst"), r0, gpr("src")]
+	}, {
+		name: "shr",
+		fields: [op_dpr, dpr_3reg, dpr_3r_g0, b5(0), gpr("dst"), gpr("src"), gpr("amount")]
+	}, {
+		name: "shr_imd",
+		fields: [op_dpr, b4(9), sh(1), u6_imd("amount"), b1(1), gpr("dst"), r0, gpr("src")]
+	}, {
+		name: "sar",
+		fields: [op_dpr, dpr_3reg, dpr_3r_g0, b5(1), gpr("dst"), gpr("src"), gpr("amount")]
+	}, {
+		name: "sar_imd",
+		fields: [op_dpr, b4(9), sh(2), u6_imd("amount"), b1(1), gpr("dst"), r0, gpr("src")]
+	}, {
+		name: "rol",
+		fields: [op_dpr, dpr_4reg, b4(8), gpr("dst"), gpr("src"), gpr("src"), gpr("amount")]
+	}, {
+		name: "rol_imd",
+		fields: [op_dpr, b4(9), sh(3), u6_imd("amount"), b1(1), gpr("dst"), r0, gpr("src")]
+	}, {
+		name: "fush",
+		fields: [op_dpr, dpr_4reg, b4(8), gpr("dst"), gpr("src"), gpr("carry"), gpr("amount")]
+	}, {
+		name: "bfext",
+		fields: [op_dpr, dpr_4reg, b4(9), gpr("dst"), gpr("src"), gpr("offset"), gpr("width")]
+	}, {
+		name: "bfext_imd",
+		fields: [op_dpi, b4(12), b2(0), gpr("dst"), gpr("src"), u6_imd("offset"), u6_imd("width")]
+	}, {
+		name: "bfins",
+		fields: [op_dpr, dpr_4reg, b4(10), gpr("dst"), gpr("src"), gpr("offset"), gpr("width")]
+	}, {
+		name: "bfins_imd",
+		fields: [op_dpi, b4(12), b2(1), gpr("dst"), gpr("src"), u6_imd("offset"), u6_imd("width")]
+	}, {
+		name: "cnt",
+		fields: [op_dpr, dpr_2reg, dpr_2r_g0, b6(0), gpr("dst"), gpr("src")]
+	}, {
+		name: "cntz",
+		fields: [op_dpr, dpr_2reg, dpr_2r_g0, b6(1), gpr("dst"), gpr("src")]
+	}, {
+		name: "clz",
+		fields: [op_dpr, dpr_2reg, dpr_2r_g0, b6(4), gpr("dst"), gpr("src")]
+	}, {
+		name: "clo",
+		fields: [op_dpr, dpr_2reg, dpr_2r_g0, b6(5), gpr("dst"), gpr("src")]
+	}, {
+		name: "ctz",
+		fields: [op_dpr, dpr_2reg, dpr_2r_g0, b6(6), gpr("dst"), gpr("src")]
+	}, {
+		name: "cto",
+		fields: [op_dpr, dpr_2reg, dpr_2r_g0, b6(7), gpr("dst"), gpr("src")]
+	}, {
+		name: "cls",
+		fields: [op_dpr, dpr_2reg, dpr_2r_g0, b6(3), gpr("dst"), gpr("src")]
+	}, {
+		name: "rev",
+		fields: [op_dpr, dpr_2reg, dpr_2r_g0, b6(8), gpr("dst"), gpr("src")]
+	}, {
+		name: "rev_parts",
+		fields: [op_dpr, dpr_2reg, dpr_2r_g0, sz, b4(2), gpr("dst"), gpr("src")]
+	}
 ];
