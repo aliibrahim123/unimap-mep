@@ -1364,7 +1364,7 @@ halt and end execution without catching on fire.
 | `pgrp` | primary group |
 | ------ | --- | 
 | `0001` | [`dpr`](#data-processing-register) |
-| `0010` | `dpi` |
+| `0010` | [`dpi`](#data-processing-immediate) |
 | `0011` | `mem` |
 | `0100` | `branch` |
 
@@ -1484,3 +1484,84 @@ halt and end execution without catching on fire.
 | `01` | `shr` |
 | `10` | `sar` |
 | `11` | `rol` |
+
+## data processing immediate
+![dpi encoding](./ref-assets/dpi_enc.svg)
+
+| `grp` | group |
+| ----- | ------|
+| `00xx` | [logic](#logic) |
+| `0100` | [arith](#arith) |
+| `0101` \| `0110` | [comp](#comp) |
+| `0111` \| `1000` \| `1001` | [bit test](#bit-test-1) |
+| `1010` | [move wide](#move-wide) |
+| `1011` | [`sel`](#sel-immediate) |
+| `1100` | [bitfield](#bitfield-1) |
+
+### logic
+![dpi logic encoding](./ref-assets/dpi_logic_enc.svg)
+
+| `op1` | `o2` | instruction |
+| ------| ---- | --- |
+| `00` | `0` | [`and`](#and-immediate) |
+| `00` | `1` | [`or`](#or-immediate) |
+| `01` | `0` | [`xor`](#xor-immediate) |
+| `01` | `1` | [`imply`](#imply-immediate) |
+| `10` | `0` | [`nand`](#nand-immediate) |
+| `10` | `1` | [`nor`](#nor-immediate) |
+| `11` | `0` | [`xor`](#xor-immediate) |
+| `11` | `1` | [`bcr`](#bcr-immediate) |
+
+### arith
+![dpi arith encoding](./ref-assets/dpi_arith_enc.svg)
+
+| `op` | instruction |
+| ---- | --- |
+| `00` | [`add`](#add-immediate) |
+| `01` | [`sub`](#sub-immediate) |
+| `10` | [`sub` reverse](#sub-reverse-immediate) |
+
+### comp
+![dpi comp encoding](./ref-assets/dpi_comp_enc.svg)
+
+| `grp` | `op` | instruction | `src2_imd` |
+| ----- | ---- | --- | --- |
+| `0101` | `0` | [`comp.eq`](#compeq-immediate) | `s12_imd` |
+| `0101` | `1` | [`comp.ne`](#compne-immediate) | `s12_imd` |
+| `0110` | `0` | [`comp.gt`](#compgt-immediate) | `s12_imd` |
+| `0110` | `1` | [`ucomp.gt`](#ucompgt-immediate) | `u12_imd` |
+
+| `ca` | modifier |
+| --- | --- |
+| `0` | default |
+| `1` | and |
+
+### bit test
+![dpi bit test encoding](./ref-assets/dpi_bit_test_enc.svg)
+
+| `grp` | instruction |
+| ----- | --- |
+| `0111` | [`test.none`](#testnone-immediate) |
+| `1000` | [`test.any`](#testany-immediate) |
+| `1001` | [`test.all`](#testall-immediate) |
+
+| `ca` | modifier |
+| --- | --- |
+| `0` | default |
+| `1` | and |
+
+### move wide
+![dpi move wide encoding](./ref-assets/dpi_move_wide_enc.svg)
+
+| `op` | instruction |
+| ---- | --- |
+| `0` | [`mov` wide](#mov-immediate) |
+| `1` | [`mov.keep`](#movkeep) |
+
+### bitfield
+![dpi bitfield encoding](./ref-assets/dpi_bitfield_enc.svg)
+
+| `op` | instruction |
+| ---- | --- |
+| `00` | [`bfext`](#bfext-immediate) |
+| `01` | [`bfins`](#bfins-immediate) |

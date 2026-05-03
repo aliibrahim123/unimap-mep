@@ -47,7 +47,7 @@
   <text x="477.25" y="15" text-anchor="end" class="bit-idx">10</text>
   <text x="426.5625" y="50" class="content-var">dst</text>
   <rect x="371.875" y="65" width="109.375" height="24" class="box-type" />
-  <text x="426.5625" y="81" class="field-type">gpr</text>
+  <text x="426.5625" y="81" class="field-type">cond</text>
   <rect x="262.5" y="25" width="109.375" height="40" class="box-line" />
   <text x="266.5" y="15" text-anchor="start" class="bit-idx">19</text>
   <text x="367.875" y="15" text-anchor="end" class="bit-idx">15</text>

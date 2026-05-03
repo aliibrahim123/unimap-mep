@@ -43,10 +43,12 @@ let l0 = { name: "l0", width: 1 };
 
 let x = (bits) => ({ value: "x".repeat(bits), width: bits });
 let f1 = (name) => ({ name, width: 1 });
+let f2 = (name) => ({ name, width: 2 });
 let f3 = (name) => ({ name, width: 3 });
 let f4 = (name) => ({ name, width: 4 });
 let f5 = (name) => ({ name, width: 5 });
 let f6 = (name) => ({ name, width: 6 });
+let f12 = (name) => ({ name, width: 12 });
 
 export default [
 	{
@@ -228,13 +230,13 @@ export default [
 		fields: [op_dpr, dpr_3reg, dpr_3r_g2, b3(2), cw, cond("dst"), gpr("src"), gpr("mask")]
 	}, {
 		name: "test_none_imd",
-		fields: [op_dpi, b4(7), ca, l0, gpr("dst"), gpr("src"), ...logic_imd]
+		fields: [op_dpi, b4(7), ca, l0, cond("dst"), gpr("src"), ...logic_imd]
 	}, {
 		name: "test_any_imd",
-		fields: [op_dpi, b4(8), ca, l0, gpr("dst"), gpr("src"), ...logic_imd]
+		fields: [op_dpi, b4(8), ca, l0, cond("dst"), gpr("src"), ...logic_imd]
 	}, {
 		name: "test_all_imd",
-		fields: [op_dpi, b4(9), ca, l0, gpr("dst"), gpr("src"), ...logic_imd]
+		fields: [op_dpi, b4(9), ca, l0, cond("dst"), gpr("src"), ...logic_imd]
 	}, {
 		name: "shl",
 		fields: [op_dpr, dpr_4reg, b4(8), gpr("dst"), gpr("src"), r0, gpr("amount")]
@@ -402,5 +404,26 @@ export default [
 	}, {
 		name: "shift_enc",
 		fields: [op_dpr, f3("op2"), b1(1), ...sh_op, f1("o1"), gpr("dst"), gpr("src1"), gpr("src2")]
+	}, {
+		name: "dpi_enc",
+		fields: [op_dpi, f4("grp"), x(24)]
+	}, {
+		name: "dpi_logic_enc",
+		fields: [op_dpi, f2("op1"), b2(0), f1("o2"), l0, gpr("dst"), gpr("src1"), ...logic_imd]
+	}, {
+		name: "dpi_arith_enc",
+		fields: [op_dpi, b4(4), f2("op"), gpr("dst"), gpr_pc("src1"), u12_imd("src2")]
+	}, {
+		name: "dpi_comp_enc",
+		fields: [op_dpi, f4("grp"), f1("op"), ca, cond("dst"), gpr("src1"), f12("src2_imd")]
+	}, {
+		name: "dpi_bit_test_enc",
+		fields: [op_dpi, f4("grp"), ca, l0, cond("dst"), gpr("src"), ...logic_imd]
+	}, {
+		name: "dpi_move_wide_enc",
+		fields: [op_dpi, b4(10), f1("op"), u2_imd("sh"), gpr("dst"), u16_imd("src")]
+	}, {
+		name: "dpi_bitfield_enc",
+		fields: [op_dpi, b4(12), f2("op"), gpr("dst"), gpr("src"), u6_imd("offset"), u6_imd("width")]
 	},
 ];
