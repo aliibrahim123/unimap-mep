@@ -502,7 +502,7 @@ mult dst:gpr, src1:gpr, src2:gpr
 
 multiplies registers `src1` by `src2` and writes the result to `dst` register.
 
-it is an alias for `mult.full dst, r0, src1, src2`
+it is an alias for [`mult.full dst, r0, src1, src2`](#multfull)
 
 ### mult.full
 ```
@@ -537,7 +537,7 @@ div dst:gpr, src1:gpr, src2:gpr
 
 divides registers `src1` by `src2` and writes the quotient to `dst` register.
 
-it is an alias for `div.full dst, r0, src1, src2`
+it is an alias for [`div.full dst, r0, src1, src2`](#divfull)
 
 ### rem
 ```
@@ -547,7 +547,7 @@ rem dst:gpr, src1:gpr, src2:gpr
 
 computes the remainder of register `src1` divided by register `src2` and writes the result to `dst` register.
 
-it is an alias for `div.full r0, dst, src1, src2`
+it is an alias for [`div.full r0, dst, src1, src2`](#divfull)
 
 ### div.full
 ```
@@ -565,7 +565,7 @@ udiv dst:gpr, src1:gpr, src2:gpr
 
 unsigned divide registers `src1` by `src2` and writes the quotient to `dst` register.
 
-it is an alias for `udiv.full dst, r0, src1, src2`
+it is an alias for [`udiv.full dst, r0, src1, src2`](#udivfull)
 
 ### urem
 ```
@@ -575,7 +575,7 @@ urem dst:gpr, src1:gpr, src2:gpr
 
 unsigned remainder of register `src1` divided by register `src2` and writes the result to `dst` register.
 
-it is an alias for `udiv.full r0, dst, src1, src2`
+it is an alias for [`udiv.full r0, dst, src1, src2`](#udivfull)
 
 ### udiv.full
 ```
@@ -603,7 +603,7 @@ neg dst:gpr, src:sh_reg
 
 negates an optionally shifted register `src` and writes the result to `dst` register.
 
-it is an alias for `sub dst, r0, src`
+it is an alias for [`sub dst, r0, src`](#sub-shifted-register)
 
 ### cneg
 ```
@@ -767,7 +767,7 @@ not dst:gpr, src:sh_reg
 
 inverts optionally shifted register `src` and writes the result to `dst` register.
 
-it is an alias for `xnor dst, r0, src`.
+it is an alias for [`xnor dst, r0, src`](#xnor-shifted-register).
 
 ### cnot
 ```
@@ -978,7 +978,7 @@ shl dst:gpr, src:gpr, amount:gpr
 
 logicaly left shifts register `src` by register `amount` modulo 64 and writes the result to `dst` register.
 
-this is an alias for `fush dst, src, r0, amount`.
+this is an alias for [`fush dst, src, r0, amount`](#fush).
 
 ### shl (immediate)
 ```
@@ -988,7 +988,7 @@ shl dst:gpr, src:gpr, amount:u6_imd
 
 logicaly left shifts register `src` by immediate `amount` and writes the result to `dst` register.
 
-this is an alias for `or dst, r0, src shl amount`.
+this is an alias for [`or dst, r0, src shl amount`](#or-shifted-register).
 
 ### shr
 ```
@@ -1006,7 +1006,7 @@ shr dst:gpr, src:gpr, amount:u6_imd
 
 logicaly right shifts register `src` by immediate `amount` and writes the result to `dst` register.
 
-this is an alias for `or dst, r0, src shr amount`.
+this is an alias for [`or dst, r0, src shr amount`](#or-shifted-register).
 
 ### sar
 ```
@@ -1024,7 +1024,7 @@ sar dst:gpr, src:gpr, amount:u6_imd
 
 arithmeticly right shifts register `src` by immediate `amount` and writes the result to `dst` register.
 
-this is an alias for `or dst, r0, src sar amount`.
+this is an alias for [`or dst, r0, src sar amount`](#or-shifted-register).
 
 ### rol
 ```
@@ -1034,7 +1034,7 @@ rol dst:gpr, src:gpr, amount:gpr
 
 rotate left register `src` by register `amount` modulo 64 and writes the result to `dst` register.
 
-this is an alias for `fush dst, src, src, amount`.
+this is an alias for [`fush dst, src, src, amount`](#fush).
 
 ### rol (immediate)
 ```
@@ -1044,7 +1044,7 @@ rol dst:gpr, src:gpr, amount:u6_imd
 
 rotate left register `src` by immediate `amount` and writes the result to `dst` register.
 
-this is an alias for `or dst, r0, src rol amount`.
+this is an alias for [`or dst, r0, src rol amount`](#or-shifted-register).
 
 ### fush
 ```
@@ -1171,7 +1171,7 @@ mov dst:gpr, src:gpr
 
 move register `src` to `dst` register.
 
-this is an alias for `or dst, src, r0`.
+this is an alias for [`or dst, src, r0`](#or-shifted-register).
 
 ### mov (immediate)
 ```
@@ -1189,7 +1189,7 @@ mov dst:gpr, src:logic_imd
 
 write the logic immediate `src` to `dst` register.
 
-this is an alias for `or dst, r0, src`.
+this is an alias for [`or dst, r0, src`](#or-immediate).
 
 ### mov (negative immediate)
 ```
@@ -1199,7 +1199,7 @@ move dst:gpr, -src:u12_imd
 
 write the negative immediate `src` to `dst` register.
 
-this is an alias for `sub dst, r0, src`.
+this is an alias for [`sub dst, r0, src`](#sub-immediate).
 
 ### mov.keep
 ```
@@ -1365,8 +1365,8 @@ halt and end execution without catching on fire.
 | ------ | --- | 
 | `0001` | [`dpr`](#data-processing-register) |
 | `0010` | [`dpi`](#data-processing-immediate) |
-| `0011` | `mem` |
-| `0100` | `branch` |
+| `0011` | [`mem`](#memory-1) |
+| `0100` | [`branch`](#branch) |
 
 ## data processing register
 ![dpr root](./ref-assets/dpr_enc.svg)
@@ -1565,3 +1565,51 @@ halt and end execution without catching on fire.
 | ---- | --- |
 | `00` | [`bfext`](#bfext-immediate) |
 | `01` | [`bfins`](#bfins-immediate) |
+
+## memory
+![mem encoding](./ref-assets/mem_enc.svg)
+
+| `amod` | addressing mode |
+| ------ | --- |
+| `0x` | [base + offset](#base--offset) |
+| `10` | [base + index](#base--index) |
+| `11` | [`ld` offset](#ld-offset) |
+
+### base + offset
+![mem base offset encoding](./ref-assets/mem_base_offset_enc.svg)
+
+| `op` | instruction |
+| ---- | --- |
+| `00` | [`ld`](#ld-base--offset) |
+| `01` | [`st`](#st-base--offset) |
+| `10` | [`ld.s`](#lds-base--offset) |
+
+| `w` | modifier |
+| --- | --- |
+| `0` | default |
+| `1` | write back |
+
+### base + index
+![mem base index encoding](./ref-assets/mem_base_index_enc.svg)
+
+| `op` | instruction |
+| ---- | --- |
+| `00` | [`ld`](#ld-base--index) |
+| `01` | [`st`](#st-base--index) |
+| `10` | [`ld.s`](#lds-base--index) |
+
+| `s` | modifier |
+| --- | --- |
+| `0` | no scale |
+| `1` | scale |
+
+## branch
+![br encoding](./ref-assets/br_enc.svg)
+
+| `op1` | `op2` | instruction |
+| ----- | ---- | --- |
+| `0000` | `_` | [`br`](#br) |
+| `0001` | `_` | [`br` link](#br-link) |
+| `001x` | `_` | [`br.cond`](#br-cond) |
+| `0100` | `0000` | [`jmp` base + index](#jmp-base--index) |
+| `0100` | `0001` | [`jmp` base + offset](#jmp-base--offset) |

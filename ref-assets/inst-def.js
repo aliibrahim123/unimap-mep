@@ -425,5 +425,17 @@ export default [
 	}, {
 		name: "dpi_bitfield_enc",
 		fields: [op_dpi, b4(12), f2("op"), gpr("dst"), gpr("src"), u6_imd("offset"), u6_imd("width")]
-	},
+	}, {
+		name: "mem_enc",
+		fields: [op_mem, f2("amod"), x(26)]
+	}, {
+		name: "mem_base_offset_enc",
+		fields: [op_mem, b1(0), b1("w"), f2("op"), sz, gpr("reg"), gpr("base"), s12_imd("offset")]
+	}, {
+		name: "mem_base_index_enc",
+		fields: [op_mem, b2(2), b6(0), f2("op"), sz, f1("s"), gpr("reg"), gpr("base"), gpr("index")]
+	}, {
+		name: "br_enc",
+		fields: [op_branch, f4("op1"), f4("op2"), x(20)]
+	}
 ];
