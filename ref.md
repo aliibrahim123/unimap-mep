@@ -86,7 +86,7 @@ start:
 	mov r2, 2
 	add r3, r1, r2
 
-one: u8 0x01;
+one: u8 0x01
 ```
 
 ### Labels
