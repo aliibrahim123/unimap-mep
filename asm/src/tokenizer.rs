@@ -21,6 +21,7 @@ pub struct Pos {
 	start: (u32, u32),
 	end: (u32, u32),
 }
+
 impl Display for Pos {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		let Self { start, end } = self;
@@ -36,20 +37,21 @@ fn pos_of(source: &Source, ind: u32) -> (u32, u32) {
 	let Source { src, line_poses, .. } = source;
 	let line = match line_poses.binary_search(&ind) {
 		Ok(line) => line,
+		Err(0) => return (1, src[0..ind as usize].chars().count() as u32 + 1),
 		Err(line) => line - 1,
 	};
 	let spaned = &src[line_poses[line] as usize..ind as usize];
-	((line + 1) as u32, spaned.chars().count() as u32)
+	((line + 2) as u32, spaned.chars().count() as u32)
 }
 impl Span {
 	pub fn none() -> Span {
 		Span(0, 0)
 	}
 	pub fn point(ind: u32) -> Span {
-		Span(ind, ind)
+		Span(ind, ind + 1)
 	}
 	pub fn pos(&self, source: &Source) -> Pos {
-		Pos { start: pos_of(source, self.0), end: pos_of(source, self.1) }
+		Pos { start: pos_of(source, self.0), end: pos_of(source, self.1 - 1) }
 	}
 	pub fn is_none(&self) -> bool {
 		self.0 == 0 && self.1 == 0
@@ -67,11 +69,12 @@ impl Display for Token<'_> {
 	}
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TokenKind<'a> {
 	Ident(&'a str),
-	Str(&'a str),
+	Str(String),
 	Nb(u64),
+	NbVar(u8),
 
 	NL,
 	Dot,
@@ -91,6 +94,7 @@ impl Display for TokenKind<'_> {
 			TokenKind::Ident(ident) => write!(f, "{ident}"),
 			TokenKind::Str(str) => write!(f, "{str}"),
 			TokenKind::Nb(nb) => write!(f, "{nb}"),
+			TokenKind::NbVar(nb) => write!(f, "{nb}"),
 			TokenKind::NL => write!(f, "\\n"),
 			TokenKind::Dot => write!(f, "."),
 			TokenKind::Comma => write!(f, ","),
@@ -109,18 +113,15 @@ pub fn unexpected_token<T>(
 	token: impl Display, expected: &str, span: Span, source: &Source,
 ) -> Result<T, Error> {
 	match expected {
-		"" => err!("parse error: unexpected token ({token})", (span, source)),
-		_ => err!("parse error: unexpected token ({token}), expected {expected}", (span, source)),
+		"" => err!("unexpected token ({token})", (span, source)),
+		_ => err!("unexpected token ({token}), expected {expected}", (span, source)),
 	}
 }
 pub fn end_of_input<T>(expected: &str, source: &Source) -> Result<T, Error> {
 	match expected {
-		"" => err!("parse error: unexpected end of input", (Span::none(), source)),
+		"" => err!("unexpected end of input", (Span::none(), source)),
 		_ => {
-			err!(
-				"parse error: unexpected end of input, expected {expected}",
-				(Span::none(), source)
-			)
+			err!("unexpected end of input, expected {expected}", (Span::none(), source))
 		}
 	}
 }
@@ -143,7 +144,68 @@ fn strip_dashes_in_nb<'a>(
 	Ok(if has_dash { Cow::from(nb.replace('_', "")) } else { Cow::from(nb) })
 }
 
-pub fn tokenize<'a>(source: &'a mut Source<'a>) -> Result<Vec<Token<'a>>, Error> {
+fn resolve_escape_codes(str: &str, start_ind: u32, source: &Source) -> Result<String, Error> {
+	let mut cur_ind = 0;
+	let mut res = String::new();
+
+	let invalid_escape_code = |start, end| {
+		err!(
+			"invalid escape code",
+			(Span(start_ind + start as u32, start_ind + end as u32), source)
+		)
+	};
+
+	while let Some(ind) = str.find_after('\\', cur_ind) {
+		res.push_str(&str[cur_ind..ind]);
+		cur_ind = ind + 2;
+		res.push(match str.char_at(ind + 1).unwrap() {
+			'n' => '\n',
+			'r' => '\r',
+			't' => '\t',
+			'"' => '"',
+			'\\' => '\\',
+			'x' => {
+				let Some(hex) = str.get(ind + 2..ind + 4) else {
+					return invalid_escape_code(ind, str.len());
+				};
+				let Ok(code) = u8::from_str_radix(hex, 16) else {
+					return invalid_escape_code(ind, ind + 4);
+				};
+				let Some(char) = char::from_u32(code as u32) else {
+					return invalid_escape_code(ind, ind + 4);
+				};
+				cur_ind = ind + 4;
+				char
+			}
+			'u' => {
+				if str.char_at(ind + 2) != Some('{') {
+					return invalid_escape_code(ind, ind + 3);
+				}
+				let Some(end) = str.find_after('}', ind + 3) else {
+					return invalid_escape_code(ind, str.len());
+				};
+				let Ok(code) = u32::from_str_radix(&str[ind + 3..end], 16) else {
+					return invalid_escape_code(ind, end);
+				};
+				let Some(char) = char::from_u32(code) else {
+					return invalid_escape_code(ind, end);
+				};
+				cur_ind = end + 1;
+				char
+			}
+			c => unexpected_token(c, "escape code", Span::point(start_ind + ind as u32), source)?,
+		});
+	}
+	Ok(res)
+}
+
+fn count_lines(raw: &str, start_ind: u32, line_poses: &mut Vec<u32>) {
+	for (ind, _) in raw.char_indices().filter(|(_, c)| *c == '\n') {
+		line_poses.push(start_ind + ind as u32);
+	}
+}
+
+pub fn tokenize<'a>(source: &mut Source<'a>) -> Result<Vec<Token<'a>>, Error> {
 	use TokenKind::*;
 	let src = &source.src;
 	let mut tokens = Vec::new();
@@ -168,7 +230,7 @@ pub fn tokenize<'a>(source: &'a mut Source<'a>) -> Result<Vec<Token<'a>>, Error>
 				let end = src
 					.while_matching(ind, |c| matches!(c, 'a'..='z' | 'A'..='Z' | '_' | '0'..='9'));
 				tokens.push(Token {
-					span: Span(ind as u32, end as u32 - 1),
+					span: Span(ind as u32, end as u32),
 					kind: Ident(&src[ind..end]),
 				});
 				ind = end;
@@ -187,14 +249,17 @@ pub fn tokenize<'a>(source: &'a mut Source<'a>) -> Result<Vec<Token<'a>>, Error>
 					_ => (10, src.while_matching(ind, |c| matches!(c, '0'..='9' | '_'))),
 				};
 
-				let nb_raw = &src[start..end];
-				let span = Span(start as u32, end as u32 - 1);
+				let nb_raw = &src[if base == 10 { start } else { start + 2 }..end];
+				let span = Span(start as u32, end as u32);
 				let nb = strip_dashes_in_nb(nb_raw, start, source)?;
 				let Ok(nb) = u64::from_str_radix(&nb, base) else {
-					return err!("parse error: large number ({nb_raw})", (span, source));
+					return err!("large number ({nb_raw})", (span, source));
 				};
-
-				tokens.push(Token { span, kind: Nb(nb) });
+				let kind = match nb_raw {
+					"8" | "16" | "32" => NbVar(nb as u8),
+					_ => Nb(nb),
+				};
+				tokens.push(Token { span, kind });
 				ind = end;
 			}
 
@@ -210,21 +275,22 @@ pub fn tokenize<'a>(source: &'a mut Source<'a>) -> Result<Vec<Token<'a>>, Error>
 			']' => push_single!(BracketClose),
 
 			'"' => {
+				let start_ind = ind;
 				let end = loop {
 					let Some(end) = src.find_after('"', ind + 1) else {
 						return end_of_input("\"", source);
 					};
-					if src.char_at(end - 1) == Some('\\') {
+					if src.char_at(end - 1) == Some('\\') && src.char_at(end - 2) != Some('\\') {
 						ind = end;
 						continue;
 					}
 					break end;
 				};
 
-				tokens.push(Token {
-					span: Span(ind as u32, end as u32),
-					kind: Str(&src[ind + 1..end]),
-				});
+				count_lines(&src[start_ind..end], start_ind as u32, &mut source.line_poses);
+				let str =
+					resolve_escape_codes(&src[start_ind + 1..end], (start_ind + 1) as u32, source)?;
+				tokens.push(Token { span: Span(start_ind as u32, end as u32 + 1), kind: Str(str) });
 				ind = end + 1;
 			}
 
@@ -236,6 +302,7 @@ pub fn tokenize<'a>(source: &'a mut Source<'a>) -> Result<Vec<Token<'a>>, Error>
 					let Some(end) = src.find_after_str("*/", ind + 2) else {
 						return end_of_input("*/", source);
 					};
+					count_lines(&src[ind..end], ind as u32, &mut source.line_poses);
 					ind = end + 2;
 				}
 				_ => return unexpected_token(cur_char, "", Span::point(ind as u32), source),
