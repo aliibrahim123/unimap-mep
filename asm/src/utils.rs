@@ -29,6 +29,11 @@ impl StrExt for str {
 	}
 }
 
+pub fn bit_insert(value: u32, src: u32, offset: u8, len: u8) -> u32 {
+	let mask = (1 << len) - 1;
+	(value & !(mask << offset)) | ((src & mask) << offset)
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Error {
 	pub msg: Box<str>,

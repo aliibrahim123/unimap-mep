@@ -29,6 +29,15 @@ impl Mnemonic {
 		Span::join(first.span, last.span)
 	}
 }
+impl Display for Mnemonic {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		write!(f, "{}", self.segments[0].name)?;
+		for ident in &self.segments[1..] {
+			write!(f, ".{}", ident.name)?;
+		}
+		Ok(())
+	}
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ConstKind {
@@ -58,16 +67,15 @@ pub enum Sign {
 }
 #[rustfmt::skip]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Reg {
+pub enum GPR {
 	R0,  R1,  R2,  R3,  R4,  R5,  R6,  R7,
 	R8,  R9,  R10, R11, R12, R13, R14, R15,
 	R16, R17, R18, R19, R20, R21, R22, R23,
 	R24, R25, R26, R27, R28, R29, R30, R31,
-	C0,  PC,
 }
-impl Reg {
+impl GPR {
 	pub fn name(&self) -> &'static str {
-		use Reg::*;
+		use GPR::*;
 		#[rustfmt::skip]
 		return match self {
 			R0  => "r0",  R1  => "r1",  R2  => "r2",  R3  => "r3",
@@ -78,11 +86,10 @@ impl Reg {
 			R20 => "r20", R21 => "r21", R22 => "r22", R23 => "r23",
 			R24 => "r24", R25 => "r25", R26 => "r26", R27 => "r27",
 			R28 => "r28", R29 => "r29", R30 => "r30", R31 => "r31",
-			C0 => "c0", PC => "pc",
 		};
 	}
 }
-impl Display for Reg {
+impl Display for GPR {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		write!(f, "{}", self.name())
 	}
@@ -103,14 +110,16 @@ pub enum SImd {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum OperandKind {
-	Reg(Reg),
-	ShReg(Reg, Shift),
+	GPR(GPR),
+	PC,
+	C0,
+	ShReg(GPR, Shift),
 	UImd(u64),
 	SImd(SImd),
 	LogicImd { level: u8, ones: u8, rot: u8 },
 	Offset(SImd),
-	BaseOffset { base: Reg, offset: i64, writeback: bool },
-	BaseIndex { base: Reg, index: Reg, shift: u8 },
+	BaseOffset { base: GPR, offset: i64, offset_span: Span, writeback: bool },
+	BaseIndex { base: GPR, index: GPR, shift: u8 },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -134,8 +143,8 @@ pub enum AsmLineKind {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AsmLine {
 	pub label: Option<Ident>,
+	pub pad: u64,
 	pub kind: AsmLineKind,
-	pub offset: u64,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -350,42 +359,40 @@ fn try_parse_const(cur: &Cursor) -> Result<Option<Const>, Error> {
 	}
 }
 
-fn try_parse_reg(ident: &str) -> Option<Reg> {
+fn try_parse_gpr(ident: &str) -> Option<GPR> {
 	match ident {
-		"r0" => Some(Reg::R0),
-		"r1" => Some(Reg::R1),
-		"r2" => Some(Reg::R2),
-		"r3" => Some(Reg::R3),
-		"r4" => Some(Reg::R4),
-		"r5" => Some(Reg::R5),
-		"r6" => Some(Reg::R6),
-		"r7" => Some(Reg::R7),
-		"r8" => Some(Reg::R8),
-		"r9" => Some(Reg::R9),
-		"r10" => Some(Reg::R10),
-		"r11" => Some(Reg::R11),
-		"r12" => Some(Reg::R12),
-		"r13" => Some(Reg::R13),
-		"r14" => Some(Reg::R14),
-		"r15" => Some(Reg::R15),
-		"r16" => Some(Reg::R16),
-		"r17" => Some(Reg::R17),
-		"r18" => Some(Reg::R18),
-		"r19" => Some(Reg::R19),
-		"r20" => Some(Reg::R20),
-		"r21" => Some(Reg::R21),
-		"r22" => Some(Reg::R22),
-		"r23" => Some(Reg::R23),
-		"r24" => Some(Reg::R24),
-		"r25" => Some(Reg::R25),
-		"r26" => Some(Reg::R26),
-		"r27" => Some(Reg::R27),
-		"r28" => Some(Reg::R28),
-		"r29" => Some(Reg::R29),
-		"r30" => Some(Reg::R30),
-		"r31" => Some(Reg::R31),
-		"c0" => Some(Reg::C0),
-		"pc" => Some(Reg::PC),
+		"r0" => Some(GPR::R0),
+		"r1" => Some(GPR::R1),
+		"r2" => Some(GPR::R2),
+		"r3" => Some(GPR::R3),
+		"r4" => Some(GPR::R4),
+		"r5" => Some(GPR::R5),
+		"r6" => Some(GPR::R6),
+		"r7" => Some(GPR::R7),
+		"r8" => Some(GPR::R8),
+		"r9" => Some(GPR::R9),
+		"r10" => Some(GPR::R10),
+		"r11" => Some(GPR::R11),
+		"r12" => Some(GPR::R12),
+		"r13" => Some(GPR::R13),
+		"r14" => Some(GPR::R14),
+		"r15" => Some(GPR::R15),
+		"r16" => Some(GPR::R16),
+		"r17" => Some(GPR::R17),
+		"r18" => Some(GPR::R18),
+		"r19" => Some(GPR::R19),
+		"r20" => Some(GPR::R20),
+		"r21" => Some(GPR::R21),
+		"r22" => Some(GPR::R22),
+		"r23" => Some(GPR::R23),
+		"r24" => Some(GPR::R24),
+		"r25" => Some(GPR::R25),
+		"r26" => Some(GPR::R26),
+		"r27" => Some(GPR::R27),
+		"r28" => Some(GPR::R28),
+		"r29" => Some(GPR::R29),
+		"r30" => Some(GPR::R30),
+		"r31" => Some(GPR::R31),
 		_ => None,
 	}
 }
@@ -441,29 +448,22 @@ fn parse_address(cur: &Cursor) -> Result<OperandKind, Error> {
 	}
 
 	let ident = cur.consume_ident()?;
-	let Some(base) = try_parse_reg(&ident.name) else {
+	let Some(base) = try_parse_gpr(&ident.name) else {
 		return Ok(Offset(SImd::Label(ident)));
 	};
-	if matches!(base, Reg::C0 | Reg::PC) {
-		return err!("register {base} cannot be used as base", (ident.span, cur.source));
+	if !matches!(cur.peek().kind, Plus | Minus) {
+		return Ok(BaseIndex { base, index: GPR::R0, shift: 0 });
 	}
 
-	if !matches!(cur.peek().kind, Plus | Minus) {
-		return Ok(BaseIndex { base, index: Reg::R0, shift: 0 });
-	}
 	let is_neg = cur.peek().kind == Minus;
 	let sign_span = cur.skip();
-
 	if let Some(ident) = cur.try_consume_ident() {
 		if is_neg {
 			return unexpected_token("(-)", "(+)", sign_span, cur.source);
 		}
-		let Some(index) = try_parse_reg(&ident.name) else {
+		let Some(index) = try_parse_gpr(&ident.name) else {
 			return unexpected_token(&ident.name, "register", ident.span, cur.source);
 		};
-		if matches!(index, self::Reg::C0 | self::Reg::PC) {
-			return err!("register {index} cannot be used as index", (ident.span, cur.source));
-		}
 
 		let shift = if let Some(ident) = cur.try_consume_ident() {
 			if ident.name != "shl" {
@@ -479,9 +479,9 @@ fn parse_address(cur: &Cursor) -> Result<OperandKind, Error> {
 		Ok(BaseIndex { base, index, shift })
 	} else {
 		let writeback = cur.try_eat(Eq);
-		let (offset, _) = cur.consume_nb()?;
+		let (offset, offset_span) = cur.consume_nb()?;
 		let offset = into_i64(cur, "offset", offset, is_neg, sign_span)?;
-		Ok(BaseOffset { base, offset, writeback })
+		Ok(BaseOffset { base, offset, offset_span, writeback })
 	}
 }
 fn parse_operand(cur: &Cursor) -> Result<Operand, Error> {
@@ -490,13 +490,17 @@ fn parse_operand(cur: &Cursor) -> Result<Operand, Error> {
 		if ident.name == "logic_imd" {
 			return parse_logic_imd(cur, &ident);
 		}
-		let Some(reg) = try_parse_reg(&ident.name) else {
+		if ident.name == "c0" {
+			return Ok(Operand { span: ident.span, kind: C0 });
+		}
+		if ident.name == "pc" {
+			return Ok(Operand { span: ident.span, kind: PC });
+		}
+		let Some(reg) = try_parse_gpr(&ident.name) else {
 			return Ok(Operand { span: ident.span, kind: SImd(self::SImd::Label(ident)) });
 		};
+
 		if let Some(sh_ident) = cur.try_consume_ident() {
-			if matches!(reg, self::Reg::C0 | self::Reg::PC) {
-				return err!("register {reg} cannot be shifted", (ident.span, cur.source));
-			}
 			let (amount, amount_span) = cur.consume_nb()?;
 			check_nb_range(cur, "shift amount", amount, 63, amount_span)?;
 
@@ -514,7 +518,7 @@ fn parse_operand(cur: &Cursor) -> Result<Operand, Error> {
 			let span = Span::join(ident.span, amount_span);
 			Ok(Operand { span, kind: ShReg(reg, shift) })
 		} else {
-			Ok(Operand { span: ident.span, kind: Reg(reg) })
+			Ok(Operand { span: ident.span, kind: GPR(reg) })
 		}
 	} else if let Some((nb, span)) = cur.try_consume_nb() {
 		Ok(Operand { span, kind: UImd(nb) })
@@ -578,7 +582,7 @@ pub fn parse(source: &mut Source) -> Result<Vec<AsmLine>, Error> {
 		} else {
 			AsmLineKind::Inst(parse_inst(cur)?)
 		};
-		lines.push(AsmLine { label, kind, offset: 0 });
+		lines.push(AsmLine { label, kind, pad: 0 });
 		cur.consume(NL)?;
 		eat_newlines(cur);
 	}
