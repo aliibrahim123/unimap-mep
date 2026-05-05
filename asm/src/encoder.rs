@@ -75,7 +75,7 @@ fn encode_const(bin: &mut Vec<u8>, cons: &Const) {
 	}
 }
 
-fn encode(lines: &mut [AsmLine], source: &Source) -> Result<Vec<u8>, Error> {
+pub fn encode(lines: &mut [AsmLine], source: &Source) -> Result<Vec<u8>, Error> {
 	let (label_offsets, len) = resolve_offsets(lines)?;
 	let mut bin = Vec::with_capacity(len);
 
@@ -90,6 +90,10 @@ fn encode(lines: &mut [AsmLine], source: &Source) -> Result<Vec<u8>, Error> {
 				bin.extend_from_slice(&inst.to_le_bytes());
 			}
 		}
+	}
+
+	if !bin.len().is_multiple_of(16) {
+		bin.resize(bin.len().next_multiple_of(16), 0);
 	}
 
 	Ok(bin)

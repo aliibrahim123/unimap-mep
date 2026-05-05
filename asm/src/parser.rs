@@ -1,6 +1,5 @@
 use std::{
 	cell::Cell,
-	collections::HashMap,
 	fmt::{Debug, Display},
 };
 
