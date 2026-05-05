@@ -1,4 +1,7 @@
-use std::{borrow::Cow, fmt::Display};
+use std::{
+	borrow::Cow,
+	fmt::{Debug, Display},
+};
 
 use crate::utils::{Error, StrExt, err};
 
@@ -12,9 +15,12 @@ impl Source<'_> {
 	pub fn new<'a>(src: &'a str, path: &'a str) -> Source<'a> {
 		Source { src, path, line_poses: Vec::new() }
 	}
+	pub fn source_of(&self, span: Span) -> &str {
+		&self.src[span.0 as usize..span.1 as usize]
+	}
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct Span(u32, u32);
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Pos {
@@ -56,6 +62,14 @@ impl Span {
 	pub fn is_none(&self) -> bool {
 		self.0 == 0 && self.1 == 0
 	}
+	pub fn join(a: Span, b: Span) -> Span {
+		Span(a.0, b.1)
+	}
+}
+impl Debug for Span {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		write!(f, "Span({}..{})", self.0, self.1)
+	}
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -63,9 +77,10 @@ pub struct Token<'a> {
 	pub span: Span,
 	pub kind: TokenKind<'a>,
 }
-impl Display for Token<'_> {
-	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		write!(f, "{}", self.kind)
+impl Token<'_> {
+	pub const EOF: Token<'static> = Token { span: Span(0, 0), kind: TokenKind::Eof };
+	pub fn display<'a>(&'a self, source: &'a Source) -> &'a str {
+		self.kind.display(self.span, source)
 	}
 }
 
@@ -74,11 +89,10 @@ pub enum TokenKind<'a> {
 	Ident(&'a str),
 	Str(String),
 	Nb(u64),
-	NbVar(u8),
 
-	NL,
 	Dot,
 	Comma,
+	Colon,
 	Plus,
 	Minus,
 	Eq,
@@ -87,24 +101,35 @@ pub enum TokenKind<'a> {
 	ParanClose,
 	BracketOpen,
 	BracketClose,
+
+	NL,
+	Eof,
 }
-impl Display for TokenKind<'_> {
-	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl TokenKind<'_> {
+	pub fn display<'a>(&'a self, span: Span, source: &'a Source) -> &'a str {
+		use TokenKind::*;
 		match self {
-			TokenKind::Ident(ident) => write!(f, "{ident}"),
-			TokenKind::Str(str) => write!(f, "{str}"),
-			TokenKind::Nb(nb) => write!(f, "{nb}"),
-			TokenKind::NbVar(nb) => write!(f, "{nb}"),
-			TokenKind::NL => write!(f, "\\n"),
-			TokenKind::Dot => write!(f, "."),
-			TokenKind::Comma => write!(f, ","),
-			TokenKind::Plus => write!(f, "+"),
-			TokenKind::Minus => write!(f, "-"),
-			TokenKind::Eq => write!(f, "="),
-			TokenKind::ParanOpen => write!(f, "("),
-			TokenKind::ParanClose => write!(f, ")"),
-			TokenKind::BracketOpen => write!(f, "["),
-			TokenKind::BracketClose => write!(f, "]"),
+			Ident(ident) => ident,
+			Str(_) | Nb(_) => source.source_of(span),
+			_ => self.symbol_fmt(),
+		}
+	}
+	pub fn symbol_fmt(&self) -> &str {
+		use TokenKind::*;
+		match self {
+			Ident(_) | Str(_) | Nb(_) => panic!(),
+			NL => "\\n",
+			Dot => ".",
+			Comma => ",",
+			Colon => ":",
+			Plus => "+",
+			Minus => "-",
+			Eq => "=",
+			ParanOpen => "(",
+			ParanClose => ")",
+			BracketOpen => "[",
+			BracketClose => "]",
+			Eof => "EOF",
 		}
 	}
 }
@@ -236,7 +261,7 @@ pub fn tokenize<'a>(source: &mut Source<'a>) -> Result<Vec<Token<'a>>, Error> {
 				ind = end;
 			}
 
-			'0'..'9' => {
+			'0'..='9' => {
 				let start = ind;
 				let (base, end) = match (src.char_at(ind), src.char_at(ind + 1)) {
 					(Some('0'), Some('b')) => {
@@ -255,16 +280,13 @@ pub fn tokenize<'a>(source: &mut Source<'a>) -> Result<Vec<Token<'a>>, Error> {
 				let Ok(nb) = u64::from_str_radix(&nb, base) else {
 					return err!("large number ({nb_raw})", (span, source));
 				};
-				let kind = match nb_raw {
-					"8" | "16" | "32" => NbVar(nb as u8),
-					_ => Nb(nb),
-				};
-				tokens.push(Token { span, kind });
+				tokens.push(Token { span, kind: Nb(nb) });
 				ind = end;
 			}
 
 			'.' => push_single!(Dot),
 			',' => push_single!(Comma),
+			':' => push_single!(Colon),
 			'+' => push_single!(Plus),
 			'-' => push_single!(Minus),
 			'=' => push_single!(Eq),
@@ -312,5 +334,6 @@ pub fn tokenize<'a>(source: &mut Source<'a>) -> Result<Vec<Token<'a>>, Error> {
 		}
 	}
 
+	tokens.push(Token::EOF);
 	Ok(tokens)
 }

@@ -74,7 +74,7 @@ They can be written in decimal, binary, or hexadecimal, with an optional `_` as 
 
 ## Top-Level Structure
 ```gramex
-let file = list<label_decl? (inst | const), "\n"+>
+let file = list<label_decl? "\n"* (inst | const), "\n"+>
 ```
 An assembly file consists of instructions and constants separated by newlines. Each instruction or constant can be prefixed with a label.
 
