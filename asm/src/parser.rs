@@ -15,26 +15,9 @@ pub struct Ident {
 	pub name: CompactString,
 	pub span: Span,
 }
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Mnemonic {
-	pub segments: Vec<Ident>,
-}
-impl Mnemonic {
-	pub fn span(&self) -> Span {
-		let (Some(first), Some(last)) = (self.segments.first(), self.segments.last()) else {
-			unreachable!()
-		};
-		Span::join(first.span, last.span)
-	}
-}
-impl Display for Mnemonic {
+impl Display for Ident {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		write!(f, "{}", self.segments[0].name)?;
-		for ident in &self.segments[1..] {
-			write!(f, ".{}", ident.name)?;
-		}
-		Ok(())
+		write!(f, "{}", self.name)
 	}
 }
 
@@ -66,15 +49,16 @@ pub enum Sign {
 }
 #[rustfmt::skip]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum GPR {
+pub enum Reg {
 	R0,  R1,  R2,  R3,  R4,  R5,  R6,  R7,
 	R8,  R9,  R10, R11, R12, R13, R14, R15,
 	R16, R17, R18, R19, R20, R21, R22, R23,
 	R24, R25, R26, R27, R28, R29, R30, R31,
+	PC, C0
 }
-impl GPR {
+impl Reg {
 	pub fn name(&self) -> &'static str {
-		use GPR::*;
+		use Reg::*;
 		#[rustfmt::skip]
 		return match self {
 			R0  => "r0",  R1  => "r1",  R2  => "r2",  R3  => "r3",
@@ -85,10 +69,11 @@ impl GPR {
 			R20 => "r20", R21 => "r21", R22 => "r22", R23 => "r23",
 			R24 => "r24", R25 => "r25", R26 => "r26", R27 => "r27",
 			R28 => "r28", R29 => "r29", R30 => "r30", R31 => "r31",
+			PC  => "pc",  C0  => "c0",
 		};
 	}
 }
-impl Display for GPR {
+impl Display for Reg {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		write!(f, "{}", self.name())
 	}
@@ -109,16 +94,16 @@ pub enum SImd {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum OperandKind {
-	GPR(GPR),
-	PC,
-	C0,
-	ShReg(GPR, Shift),
+	GPR(Reg),
+	PC(Reg),
+	C0(Reg),
+	ShReg(Reg, Shift),
 	UImd(u64),
 	SImd(SImd),
 	LogicImd { level: u8, ones: u8, rot: u8 },
 	Offset(SImd),
-	BaseOffset { base: GPR, offset: i64, offset_span: Span, writeback: bool },
-	BaseIndex { base: GPR, index: GPR, shift: u8 },
+	BaseOffset { base: Reg, offset: i64, offset_span: Span, writeback: bool },
+	BaseIndex { base: Reg, index: Reg, shift: u8 },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -129,7 +114,7 @@ pub struct Operand {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Inst {
-	pub mnemonic: Mnemonic,
+	pub mnemonic: Ident,
 	pub operands: Vec<Operand>,
 	pub span: Span,
 }
@@ -358,40 +343,40 @@ fn try_parse_const(cur: &Cursor) -> Result<Option<Const>, Error> {
 	}
 }
 
-fn try_parse_gpr(ident: &str) -> Option<GPR> {
+fn try_parse_gpr(ident: &str) -> Option<Reg> {
 	match ident {
-		"r0" => Some(GPR::R0),
-		"r1" => Some(GPR::R1),
-		"r2" => Some(GPR::R2),
-		"r3" => Some(GPR::R3),
-		"r4" => Some(GPR::R4),
-		"r5" => Some(GPR::R5),
-		"r6" => Some(GPR::R6),
-		"r7" => Some(GPR::R7),
-		"r8" => Some(GPR::R8),
-		"r9" => Some(GPR::R9),
-		"r10" => Some(GPR::R10),
-		"r11" => Some(GPR::R11),
-		"r12" => Some(GPR::R12),
-		"r13" => Some(GPR::R13),
-		"r14" => Some(GPR::R14),
-		"r15" => Some(GPR::R15),
-		"r16" => Some(GPR::R16),
-		"r17" => Some(GPR::R17),
-		"r18" => Some(GPR::R18),
-		"r19" => Some(GPR::R19),
-		"r20" => Some(GPR::R20),
-		"r21" => Some(GPR::R21),
-		"r22" => Some(GPR::R22),
-		"r23" => Some(GPR::R23),
-		"r24" => Some(GPR::R24),
-		"r25" => Some(GPR::R25),
-		"r26" => Some(GPR::R26),
-		"r27" => Some(GPR::R27),
-		"r28" => Some(GPR::R28),
-		"r29" => Some(GPR::R29),
-		"r30" => Some(GPR::R30),
-		"r31" => Some(GPR::R31),
+		"r0" => Some(Reg::R0),
+		"r1" => Some(Reg::R1),
+		"r2" => Some(Reg::R2),
+		"r3" => Some(Reg::R3),
+		"r4" => Some(Reg::R4),
+		"r5" => Some(Reg::R5),
+		"r6" => Some(Reg::R6),
+		"r7" => Some(Reg::R7),
+		"r8" => Some(Reg::R8),
+		"r9" => Some(Reg::R9),
+		"r10" => Some(Reg::R10),
+		"r11" => Some(Reg::R11),
+		"r12" => Some(Reg::R12),
+		"r13" => Some(Reg::R13),
+		"r14" => Some(Reg::R14),
+		"r15" => Some(Reg::R15),
+		"r16" => Some(Reg::R16),
+		"r17" => Some(Reg::R17),
+		"r18" => Some(Reg::R18),
+		"r19" => Some(Reg::R19),
+		"r20" => Some(Reg::R20),
+		"r21" => Some(Reg::R21),
+		"r22" => Some(Reg::R22),
+		"r23" => Some(Reg::R23),
+		"r24" => Some(Reg::R24),
+		"r25" => Some(Reg::R25),
+		"r26" => Some(Reg::R26),
+		"r27" => Some(Reg::R27),
+		"r28" => Some(Reg::R28),
+		"r29" => Some(Reg::R29),
+		"r30" => Some(Reg::R30),
+		"r31" => Some(Reg::R31),
 		_ => None,
 	}
 }
@@ -451,7 +436,7 @@ fn parse_address(cur: &Cursor) -> Result<OperandKind, Error> {
 		return Ok(Offset(SImd::Label(ident)));
 	};
 	if !matches!(cur.peek().kind, Plus | Minus) {
-		return Ok(BaseIndex { base, index: GPR::R0, shift: 0 });
+		return Ok(BaseIndex { base, index: Reg::R0, shift: 0 });
 	}
 
 	let is_neg = cur.peek().kind == Minus;
@@ -490,10 +475,10 @@ fn parse_operand(cur: &Cursor) -> Result<Operand, Error> {
 			return parse_logic_imd(cur, &ident);
 		}
 		if ident.name == "c0" {
-			return Ok(Operand { span: ident.span, kind: C0 });
+			return Ok(Operand { span: ident.span, kind: C0(Reg::C0) });
 		}
 		if ident.name == "pc" {
-			return Ok(Operand { span: ident.span, kind: PC });
+			return Ok(Operand { span: ident.span, kind: PC(Reg::PC) });
 		}
 		let Some(reg) = try_parse_gpr(&ident.name) else {
 			return Ok(Operand { span: ident.span, kind: SImd(self::SImd::Label(ident)) });
@@ -533,19 +518,21 @@ fn parse_operand(cur: &Cursor) -> Result<Operand, Error> {
 }
 
 fn parse_inst(cur: &Cursor) -> Result<Inst, Error> {
-	let mut segments = vec![cur.consume_ident()?];
+	let mut mnemonic = cur.consume_ident()?;
 	while cur.try_eat(Dot) {
+		mnemonic.name.push('.');
 		if let src = cur.source.source_of(cur.peek().span)
 			&& matches!(src, "8" | "16" | "32")
 		{
-			let span = cur.skip();
-			segments.push(Ident { name: CompactString::from(src), span })
+			mnemonic.name.push_str(&src);
+			mnemonic.span = Span::join(mnemonic.span, cur.skip());
 		} else {
-			segments.push(cur.consume_ident()?);
+			let ident = cur.consume_ident()?;
+			mnemonic.name.push_str(&ident.name);
+			mnemonic.span = Span::join(mnemonic.span, ident.span);
 		}
 	}
-	let mnemonic = Mnemonic { segments };
-	let start_span = mnemonic.span();
+	let start_span = mnemonic.span;
 
 	if cur.test(NL) {
 		return Ok(Inst { mnemonic, operands: vec![], span: start_span });
@@ -582,8 +569,10 @@ pub fn parse(source: &mut Source) -> Result<Vec<AsmLine>, Error> {
 			AsmLineKind::Inst(parse_inst(cur)?)
 		};
 		lines.push(AsmLine { label, kind, pad: 0 });
-		cur.consume(NL)?;
-		eat_newlines(cur);
+		if !cur.is_end() {
+			cur.consume(NL)?;
+			eat_newlines(cur);
+		}
 	}
 
 	Ok(lines)

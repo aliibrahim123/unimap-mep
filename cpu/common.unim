@@ -3,7 +3,7 @@ import math.shift { rol };
 symbol regs, pc, mem, c0;
 
 symbol invalid_instruction;
-fn invalid (state, inst) => dbg([invalid_instruction, state.pc, inst]) |> panic();
+fn invalid (state, inst) => dbg([invalid_instruction, state.pc, inst, state]) |> panic();
 fn panic() => panic();
 
 fn write_reg (state, reg, value) => reg: {

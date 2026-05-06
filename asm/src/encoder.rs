@@ -4,22 +4,23 @@ use compact_str::CompactString;
 
 use crate::{
 	inst_encoder::encode_inst,
-	parser::{AsmLine, AsmLineKind, Const, ConstKind, GPR, Operand, OperandKind},
+	parser::{AsmLine, AsmLineKind, Const, ConstKind, Operand, OperandKind, Reg, Shift},
 	tokenizer::{Source, Span},
 	utils::{Error, bit_insert, err},
 };
 
-fn reg_code(reg: GPR) -> u8 {
+fn reg_code(reg: Reg) -> u8 {
 	#[rustfmt::skip]
 	return match reg {
-		GPR::R0  => 0,  GPR::R1  => 1,  GPR::R2  => 2,  GPR::R3  => 3,
-		GPR::R4  => 4,  GPR::R5  => 5,  GPR::R6  => 6,  GPR::R7  => 7,
-		GPR::R8  => 8,  GPR::R9  => 9,  GPR::R10 => 10, GPR::R11 => 11,
-		GPR::R12 => 12, GPR::R13 => 13, GPR::R14 => 14, GPR::R15 => 15,
-		GPR::R16 => 16, GPR::R17 => 17, GPR::R18 => 18, GPR::R19 => 19,
-		GPR::R20 => 20, GPR::R21 => 21, GPR::R22 => 22, GPR::R23 => 23,
-		GPR::R24 => 24, GPR::R25 => 25, GPR::R26 => 26, GPR::R27 => 27,
-		GPR::R28 => 28, GPR::R29 => 29, GPR::R30 => 30, GPR::R31 => 31,
+		Reg::R0  => 0,  Reg::R1  => 1,  Reg::R2  => 2,  Reg::R3  => 3,
+		Reg::R4  => 4,  Reg::R5  => 5,  Reg::R6  => 6,  Reg::R7  => 7,
+		Reg::R8  => 8,  Reg::R9  => 9,  Reg::R10 => 10, Reg::R11 => 11,
+		Reg::R12 => 12, Reg::R13 => 13, Reg::R14 => 14, Reg::R15 => 15,
+		Reg::R16 => 16, Reg::R17 => 17, Reg::R18 => 18, Reg::R19 => 19,
+		Reg::R20 => 20, Reg::R21 => 21, Reg::R22 => 22, Reg::R23 => 23,
+		Reg::R24 => 24, Reg::R25 => 25, Reg::R26 => 26, Reg::R27 => 27,
+		Reg::R28 => 28, Reg::R29 => 29, Reg::R30 => 30, Reg::R31 => 31,
+		Reg::PC  => 0,  Reg::C0  => 0,
 	};
 }
 
@@ -121,13 +122,33 @@ impl InstBuilder<'_> {
 			source: self.source,
 		}
 	}
-	pub fn gpr(self, reg: GPR) -> Self {
+	pub fn b1(self, value: u8) -> Self {
+		self.b(value as u32, 1)
+	}
+	pub fn b2(self, value: u8) -> Self {
+		self.b(value as u32, 2)
+	}
+	pub fn b4(self, value: u8) -> Self {
+		self.b(value as u32, 4)
+	}
+	pub fn b5(self, value: u8) -> Self {
+		self.b(value as u32, 5)
+	}
+	pub fn gpr(self, reg: Reg) -> Self {
 		self.b(reg_code(reg) as u32, 5)
 	}
-	pub fn cond(self, operand: &Operand) -> Self {
-		match operand.kind {
-			OperandKind::GPR(reg) => self.b(reg_code(reg) as u32, 5),
-			_ => self.b(0, 5),
+	pub fn cond(self, reg: Reg, span: Span) -> Result<Self, Error> {
+		match reg {
+			Reg::C0 => Ok(self.b(0, 5)),
+			Reg::R0 => err!("r0 can not be used as condition register", (span, self.source)),
+			_ => Ok(self.b(reg_code(reg) as u32, 5)),
+		}
+	}
+	pub fn gpr_pc(self, reg: Reg, span: Span) -> Result<Self, Error> {
+		match reg {
+			Reg::PC => Ok(self.b(0, 5)),
+			Reg::R0 => err!("r0 can not be used here", (span, self.source)),
+			_ => Ok(self.b(reg_code(reg) as u32, 5)),
 		}
 	}
 	pub fn u_imd(self, value: u64, len: u8, span: Span) -> Result<Self, Error> {
@@ -143,5 +164,13 @@ impl InstBuilder<'_> {
 			return err!("number ({src}) out of range for s{len}_imd", (span, self.source));
 		}
 		Ok(self.b(value as u32, len))
+	}
+	pub fn shift(self, shift: Shift) -> Self {
+		match shift {
+			Shift::SHL(amount) => self.b(0, 2).b(amount as u32, 6),
+			Shift::SHR(amount) => self.b(1, 2).b(amount as u32, 6),
+			Shift::SAR(amount) => self.b(2, 2).b(amount as u32, 6),
+			Shift::ROL(amount) => self.b(3, 2).b(amount as u32, 6),
+		}
 	}
 }

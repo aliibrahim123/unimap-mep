@@ -12,4 +12,4 @@ use_field_init_shorthand = true
 use_small_heuristics = "Max"
 wrap_comments = true
 where_single_line = true
-chain_width = 80
+chain_width = 100
