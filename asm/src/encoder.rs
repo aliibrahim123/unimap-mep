@@ -4,7 +4,7 @@ use compact_str::CompactString;
 
 use crate::{
 	inst_encoder::encode_inst,
-	parser::{AsmLine, AsmLineKind, Const, ConstKind, Operand, OperandKind, Reg, Shift},
+	parser::{AsmLine, AsmLineKind, Const, ConstKind, Operand, OperandKind, Reg, SImd, Shift},
 	tokenizer::{Source, Span},
 	utils::{Error, bit_insert, err},
 };
@@ -24,7 +24,7 @@ fn reg_code(reg: Reg) -> u8 {
 	};
 }
 
-pub type LabelOffsets = HashMap<CompactString, u64>;
+pub type LabelIndexes = HashMap<CompactString, u64>;
 
 fn line_stats(line: &AsmLine) -> (u64, u64) {
 	match &line.kind {
@@ -40,8 +40,8 @@ fn line_stats(line: &AsmLine) -> (u64, u64) {
 	}
 }
 
-fn resolve_offsets(lines: &mut [AsmLine]) -> Result<(LabelOffsets, usize), Error> {
-	let mut label_offsets = HashMap::new();
+fn resolve_offsets(lines: &mut [AsmLine]) -> Result<(LabelIndexes, usize), Error> {
+	let mut label_indexes = HashMap::new();
 	let mut offset = 0u64;
 
 	for line in lines {
@@ -52,12 +52,12 @@ fn resolve_offsets(lines: &mut [AsmLine]) -> Result<(LabelOffsets, usize), Error
 			offset = new_offset;
 		}
 		if let Some(label) = &line.label {
-			label_offsets.insert(label.name.clone(), offset);
+			label_indexes.insert(label.name.clone(), offset);
 		}
 		offset += len;
 	}
 
-	Ok((label_offsets, offset as usize))
+	Ok((label_indexes, offset as usize))
 }
 
 fn encode_const(bin: &mut Vec<u8>, cons: &Const) {
@@ -77,7 +77,7 @@ fn encode_const(bin: &mut Vec<u8>, cons: &Const) {
 }
 
 pub fn encode(lines: &mut [AsmLine], source: &Source) -> Result<Vec<u8>, Error> {
-	let (label_offsets, len) = resolve_offsets(lines)?;
+	let (label_indexes, len) = resolve_offsets(lines)?;
 	let mut bin = Vec::with_capacity(len);
 
 	for line in lines {
@@ -87,7 +87,7 @@ pub fn encode(lines: &mut [AsmLine], source: &Source) -> Result<Vec<u8>, Error> 
 		match &line.kind {
 			AsmLineKind::Const(cons) => encode_const(&mut bin, cons),
 			AsmLineKind::Inst(inst) => {
-				let inst = encode_inst(inst, &label_offsets, source)?;
+				let inst = encode_inst(inst, bin.len() as u64, &label_indexes, source)?;
 				bin.extend_from_slice(&inst.to_le_bytes());
 			}
 		}
@@ -105,11 +105,15 @@ pub struct InstBuilder<'a> {
 	pub inst: u32,
 	pub index: u8,
 	pub source: &'a Source<'a>,
+	pub label_indexes: &'a LabelIndexes,
+	pub inst_index: u64,
 }
 
 impl InstBuilder<'_> {
-	pub fn new<'b>(source: &'b Source<'b>) -> InstBuilder<'b> {
-		InstBuilder { inst: 0, index: 0, source }
+	pub fn new<'b>(
+		source: &'b Source<'b>, label_indexes: &'b LabelIndexes, inst_index: u64,
+	) -> InstBuilder<'b> {
+		InstBuilder { inst: 0, index: 0, source, label_indexes, inst_index }
 	}
 	pub fn finish(self) -> u32 {
 		assert!(self.index == 32);
@@ -119,7 +123,7 @@ impl InstBuilder<'_> {
 		Self {
 			inst: bit_insert(self.inst, value, self.index, len),
 			index: self.index + len,
-			source: self.source,
+			..self
 		}
 	}
 	pub fn b1(self, value: u8) -> Self {
@@ -128,11 +132,20 @@ impl InstBuilder<'_> {
 	pub fn b2(self, value: u8) -> Self {
 		self.b(value as u32, 2)
 	}
+	pub fn b3(self, value: u8) -> Self {
+		self.b(value as u32, 3)
+	}
 	pub fn b4(self, value: u8) -> Self {
 		self.b(value as u32, 4)
 	}
 	pub fn b5(self, value: u8) -> Self {
 		self.b(value as u32, 5)
+	}
+	pub fn b6(self, value: u8) -> Self {
+		self.b(value as u32, 6)
+	}
+	pub fn b8(self, value: u8) -> Self {
+		self.b(value as u32, 8)
 	}
 	pub fn gpr(self, reg: Reg) -> Self {
 		self.b(reg_code(reg) as u32, 5)
@@ -158,10 +171,24 @@ impl InstBuilder<'_> {
 		}
 		Ok(self.b(value as u32, len))
 	}
-	pub fn s_imd(self, value: i64, len: u8, span: Span) -> Result<Self, Error> {
+	pub fn s_imd(self, imd: &SImd, len: u8, span: Span) -> Result<Self, Error> {
+		let value = match imd {
+			SImd::I64(nb) => *nb,
+			SImd::Label(label) => {
+				let Some(ind) = self.label_indexes.get(&label.name) else {
+					return err!("label {label} not found", (span, self.source));
+				};
+				*ind as i64 - self.inst_index as i64
+			}
+		};
 		if value > (1 << (len - 1)) - 1 || value < -(1 << (len - 1)) {
-			let src = self.source.source_of(span);
-			return err!("number ({src}) out of range for s{len}_imd", (span, self.source));
+			let what = if let SImd::I64(label) = imd {
+				format!("label \"{label}\" offset")
+			} else {
+				let src = self.source.source_of(span);
+				format!("number ({src})")
+			};
+			return err!("{what} out of range for s{len}_imd", (span, self.source));
 		}
 		Ok(self.b(value as u32, len))
 	}
