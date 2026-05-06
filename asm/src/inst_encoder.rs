@@ -1,6 +1,10 @@
 use crate::{
 	encoder::{InstBuilder, LabelIndexes},
-	parser::{Ident, Inst, OperandKind, Reg, Shift},
+	parser::{
+		Ident, Inst, OperandKind,
+		Reg::{self, R0},
+		Shift,
+	},
 	tokenizer::Source,
 	utils::{Error, err},
 };
@@ -23,7 +27,7 @@ const DPR_4REG: u8 = 2;
 const DPR_2R_G0: u8 = 0;
 const DPR_3R_G0: u8 = 0;
 const DPR_3R_G1: u8 = 1;
-const DPR_3R_G3: u8 = 2;
+const DPR_3R_G2: u8 = 2;
 
 const SH_0: Shift = Shift::SHL(0);
 
@@ -88,7 +92,7 @@ pub fn encode_inst(
 		},
 		"mult" => match operands {
 			[(GPR(dst), _), (GPR(src1), _), (GPR(src2), _)] => {
-				build = build.b4(OP_DPR).b4(DPR_4REG).b4(5).gpr(*dst).gpr(Reg::R0);
+				build = build.b4(OP_DPR).b4(DPR_4REG).b4(5).gpr(*dst).gpr(R0);
 				build.gpr(*src1).gpr(*src2).finish()
 			}
 			_ => return invalid_operands(inst, source),
@@ -116,14 +120,14 @@ pub fn encode_inst(
 		},
 		"div" => match operands {
 			[(GPR(dst), _), (GPR(src1), _), (GPR(src2), _)] => {
-				build = build.b4(OP_DPR).b4(DPR_4REG).b4(6).gpr(*dst).gpr(Reg::R0);
+				build = build.b4(OP_DPR).b4(DPR_4REG).b4(6).gpr(*dst).gpr(R0);
 				build.gpr(*src1).gpr(*src2).finish()
 			}
 			_ => return invalid_operands(inst, source),
 		},
 		"rem" => match operands {
 			[(GPR(dst), _), (GPR(src1), _), (GPR(src2), _)] => {
-				build = build.b4(OP_DPR).b4(DPR_4REG).b4(6).gpr(Reg::R0).gpr(*dst);
+				build = build.b4(OP_DPR).b4(DPR_4REG).b4(6).gpr(R0).gpr(*dst);
 				build.gpr(*src1).gpr(*src2).finish()
 			}
 			_ => return invalid_operands(inst, source),
@@ -137,14 +141,14 @@ pub fn encode_inst(
 		},
 		"udiv" => match operands {
 			[(GPR(dst), _), (GPR(src1), _), (GPR(src2), _)] => {
-				build = build.b4(OP_DPR).b4(DPR_4REG).b4(7).gpr(*dst).gpr(Reg::R0);
+				build = build.b4(OP_DPR).b4(DPR_4REG).b4(7).gpr(*dst).gpr(R0);
 				build.gpr(*src1).gpr(*src2).finish()
 			}
 			_ => return invalid_operands(inst, source),
 		},
 		"urem" => match operands {
 			[(GPR(dst), _), (GPR(src1), _), (GPR(src2), _)] => {
-				build = build.b4(OP_DPR).b4(DPR_4REG).b4(7).gpr(Reg::R0).gpr(*dst);
+				build = build.b4(OP_DPR).b4(DPR_4REG).b4(7).gpr(R0).gpr(*dst);
 				build.gpr(*src1).gpr(*src2).finish()
 			}
 			_ => return invalid_operands(inst, source),
@@ -171,10 +175,10 @@ pub fn encode_inst(
 		},
 		"neg" => match operands {
 			[(GPR(dst), _), (GPR(src), _)] => {
-				build.b4(OP_DPR).b4(9).shift(SH_0).b1(0).gpr(*dst).gpr(Reg::R0).gpr(*src).finish()
+				build.b4(OP_DPR).b4(9).shift(SH_0).b1(0).gpr(*dst).gpr(R0).gpr(*src).finish()
 			}
 			[(GPR(dst), _), (ShReg(src, shift), _)] => {
-				build.b4(OP_DPR).b4(9).shift(*shift).b1(0).gpr(*dst).gpr(Reg::R0).gpr(*src).finish()
+				build.b4(OP_DPR).b4(9).shift(*shift).b1(0).gpr(*dst).gpr(R0).gpr(*src).finish()
 			}
 			_ => return invalid_operands(inst, source),
 		},
@@ -230,10 +234,7 @@ pub fn encode_inst(
 				build.gpr(*src1).gpr(*src2).finish()
 			}
 			_ => return invalid_operands(inst, source),
-		}, /*{
-		name: "comp_eq_imd",
-		fields: [op_dpi, b4(5), b1(0), ca, cond("dst"), gpr("src1"), s12_imd("src2")]
-		}, */
+		},
 		"comp.eq" => match operands {
 			[(C0(dst) | GPR(dst), span1), (GPR(src1), _), (GPR(src2), _)] => {
 				build = build.b4(OP_DPR).b4(DPR_3REG).b4(DPR_3R_G1).b3(0).b2(0);
@@ -389,6 +390,213 @@ pub fn encode_inst(
 			[(C0(dst) | GPR(dst), span1), (GPR(src1), _), (GPR(src2), _)] => {
 				build = build.b4(OP_DPR).b4(DPR_3REG).b4(DPR_3R_G1).b3(5).b2(3);
 				build.cond(*dst, *span1)?.gpr(*src1).gpr(*src2).finish()
+			}
+			_ => return invalid_operands(inst, source),
+		},
+		"not" => match operands {
+			[(GPR(dst), _), (GPR(src), _)] => {
+				build.b4(OP_DPR).b4(14).shift(SH_0).b1(1).gpr(*dst).gpr(R0).gpr(*src).finish()
+			}
+			[(GPR(dst), _), (ShReg(src, shift), _)] => {
+				build.b4(OP_DPR).b4(14).shift(*shift).b1(1).gpr(*dst).gpr(R0).gpr(*src).finish()
+			}
+			_ => return invalid_operands(inst, source),
+		},
+		"cnot" => match operands {
+			[(GPR(dst), _), (C0(cond) | GPR(cond), span1), (GPR(src), _)] => {
+				build = build.b4(OP_DPR).b4(DPR_3REG).b4(DPR_3R_G0).b5(6).gpr(*dst);
+				build.cond(*cond, *span1)?.gpr(*src).finish()
+			}
+			_ => return invalid_operands(inst, source),
+		},
+		"and" => match operands {
+			[(GPR(dst), _), (GPR(src1), _), (GPR(src2), _)] => {
+				build.b4(OP_DPR).b4(8).shift(SH_0).b1(1).gpr(*dst).gpr(*src1).gpr(*src2).finish()
+			}
+			[(GPR(dst), _), (GPR(src1), _), (ShReg(src2, shift), _)] => {
+				build.b4(OP_DPR).b4(8).shift(*shift).b1(1).gpr(*dst).gpr(*src1).gpr(*src2).finish()
+			}
+			[(GPR(dst), _), (GPR(src1), _), (LogicImd { level, ones, rot }, _)] => {
+				let build = build.b4(OP_DPI).b4(0).b1(0).limd_l0(*level).gpr(*dst);
+				build.gpr(*src1).logic_imd(*level, *ones, *rot).finish()
+			}
+			_ => return invalid_operands(inst, source),
+		},
+		"or" => match operands {
+			[(GPR(dst), _), (GPR(src1), _), (GPR(src2), _)] => {
+				build.b4(OP_DPR).b4(9).shift(SH_0).b1(1).gpr(*dst).gpr(*src1).gpr(*src2).finish()
+			}
+			[(GPR(dst), _), (GPR(src1), _), (ShReg(src2, shift), _)] => {
+				build.b4(OP_DPR).b4(9).shift(*shift).b1(1).gpr(*dst).gpr(*src1).gpr(*src2).finish()
+			}
+			[(GPR(dst), _), (GPR(src1), _), (LogicImd { level, ones, rot }, _)] => {
+				let build = build.b4(OP_DPI).b4(0).b1(1).limd_l0(*level).gpr(*dst);
+				build.gpr(*src1).logic_imd(*level, *ones, *rot).finish()
+			}
+			_ => return invalid_operands(inst, source),
+		},
+		"xor" => match operands {
+			[(GPR(dst), _), (GPR(src1), _), (GPR(src2), _)] => {
+				build.b4(OP_DPR).b4(10).shift(SH_0).b1(1).gpr(*dst).gpr(*src1).gpr(*src2).finish()
+			}
+			[(GPR(dst), _), (GPR(src1), _), (ShReg(src2, shift), _)] => {
+				build.b4(OP_DPR).b4(10).shift(*shift).b1(1).gpr(*dst).gpr(*src1).gpr(*src2).finish()
+			}
+			[(GPR(dst), _), (GPR(src1), _), (LogicImd { level, ones, rot }, _)] => {
+				let build = build.b4(OP_DPI).b4(1).b1(0).limd_l0(*level).gpr(*dst);
+				build.gpr(*src1).logic_imd(*level, *ones, *rot).finish()
+			}
+			_ => return invalid_operands(inst, source),
+		},
+		"imply" => match operands {
+			[(GPR(dst), _), (GPR(src1), _), (GPR(src2), _)] => {
+				build.b4(OP_DPR).b4(11).shift(SH_0).b1(1).gpr(*dst).gpr(*src1).gpr(*src2).finish()
+			}
+			[(GPR(dst), _), (GPR(src1), _), (ShReg(src2, shift), _)] => {
+				build.b4(OP_DPR).b4(11).shift(*shift).b1(1).gpr(*dst).gpr(*src1).gpr(*src2).finish()
+			}
+			[(GPR(dst), _), (GPR(src1), _), (LogicImd { level, ones, rot }, _)] => {
+				let build = build.b4(OP_DPI).b4(1).b1(1).limd_l0(*level).gpr(*dst);
+				build.gpr(*src1).logic_imd(*level, *ones, *rot).finish()
+			}
+			_ => return invalid_operands(inst, source),
+		},
+		"nand" => match operands {
+			[(GPR(dst), _), (GPR(src1), _), (GPR(src2), _)] => {
+				build.b4(OP_DPR).b4(12).shift(SH_0).b1(1).gpr(*dst).gpr(*src1).gpr(*src2).finish()
+			}
+			[(GPR(dst), _), (GPR(src1), _), (ShReg(src2, shift), _)] => {
+				build.b4(OP_DPR).b4(12).shift(*shift).b1(1).gpr(*dst).gpr(*src1).gpr(*src2).finish()
+			}
+			[(GPR(dst), _), (GPR(src1), _), (LogicImd { level, ones, rot }, _)] => {
+				let build = build.b4(OP_DPI).b4(2).b1(0).limd_l0(*level).gpr(*dst);
+				build.gpr(*src1).logic_imd(*level, *ones, *rot).finish()
+			}
+			_ => return invalid_operands(inst, source),
+		},
+		"nor" => match operands {
+			[(GPR(dst), _), (GPR(src1), _), (GPR(src2), _)] => {
+				build.b4(OP_DPR).b4(13).shift(SH_0).b1(1).gpr(*dst).gpr(*src1).gpr(*src2).finish()
+			}
+			[(GPR(dst), _), (GPR(src1), _), (ShReg(src2, shift), _)] => {
+				build.b4(OP_DPR).b4(13).shift(*shift).b1(1).gpr(*dst).gpr(*src1).gpr(*src2).finish()
+			}
+			[(GPR(dst), _), (GPR(src1), _), (LogicImd { level, ones, rot }, _)] => {
+				let build = build.b4(OP_DPI).b4(2).b1(1).limd_l0(*level).gpr(*dst);
+				build.gpr(*src1).logic_imd(*level, *ones, *rot).finish()
+			}
+			_ => return invalid_operands(inst, source),
+		},
+		"xnor" => match operands {
+			[(GPR(dst), _), (GPR(src1), _), (GPR(src2), _)] => {
+				build.b4(OP_DPR).b4(14).shift(SH_0).b1(1).gpr(*dst).gpr(*src1).gpr(*src2).finish()
+			}
+			[(GPR(dst), _), (GPR(src1), _), (ShReg(src2, shift), _)] => {
+				build.b4(OP_DPR).b4(14).shift(*shift).b1(1).gpr(*dst).gpr(*src1).gpr(*src2).finish()
+			}
+			[(GPR(dst), _), (GPR(src1), _), (LogicImd { level, ones, rot }, _)] => {
+				let build = build.b4(OP_DPI).b4(3).b1(0).limd_l0(*level).gpr(*dst);
+				build.gpr(*src1).logic_imd(*level, *ones, *rot).finish()
+			}
+			_ => return invalid_operands(inst, source),
+		},
+		"bcr" => match operands {
+			[(GPR(dst), _), (GPR(src1), _), (GPR(src2), _)] => {
+				build.b4(OP_DPR).b4(15).shift(SH_0).b1(1).gpr(*dst).gpr(*src1).gpr(*src2).finish()
+			}
+			[(GPR(dst), _), (GPR(src1), _), (ShReg(src2, shift), _)] => {
+				build.b4(OP_DPR).b4(15).shift(*shift).b1(1).gpr(*dst).gpr(*src1).gpr(*src2).finish()
+			}
+			[(GPR(dst), _), (GPR(src1), _), (LogicImd { level, ones, rot }, _)] => {
+				let build = build.b4(OP_DPI).b4(3).b1(1).limd_l0(*level).gpr(*dst);
+				build.gpr(*src1).logic_imd(*level, *ones, *rot).finish()
+			}
+			_ => return invalid_operands(inst, source),
+		},
+		"test.none" => match operands {
+			[(C0(dst) | GPR(dst), span1), (GPR(src), _), (GPR(mask), _)] => {
+				build = build.b4(OP_DPR).b4(DPR_3REG).b4(DPR_3R_G2).b3(0).b2(0);
+				build.cond(*dst, *span1)?.gpr(*src).gpr(*mask).finish()
+			}
+			[(C0(dst) | GPR(dst), span1), (GPR(src), _), (LogicImd { level, ones, rot }, _)] => {
+				let build = build.b4(OP_DPI).b4(7).b1(0).limd_l0(*level).cond(*dst, *span1)?;
+				build.gpr(*src).logic_imd(*level, *ones, *rot).finish()
+			}
+			_ => return invalid_operands(inst, source),
+		},
+		"test.none.and" => match operands {
+			[(C0(dst) | GPR(dst), span1), (GPR(src), _), (GPR(mask), _)] => {
+				build = build.b4(OP_DPR).b4(DPR_3REG).b4(DPR_3R_G2).b3(0).b2(1);
+				build.cond(*dst, *span1)?.gpr(*src).gpr(*mask).finish()
+			}
+			[(C0(dst) | GPR(dst), span1), (GPR(src), _), (LogicImd { level, ones, rot }, _)] => {
+				let build = build.b4(OP_DPI).b4(7).b1(1).limd_l0(*level).cond(*dst, *span1)?;
+				build.gpr(*src).logic_imd(*level, *ones, *rot).finish()
+			}
+			_ => return invalid_operands(inst, source),
+		},
+		"test.none.or" => match operands {
+			[(C0(dst) | GPR(dst), span1), (GPR(src), _), (GPR(mask), _)] => {
+				build = build.b4(OP_DPR).b4(DPR_3REG).b4(DPR_3R_G2).b3(0).b2(3);
+				build.cond(*dst, *span1)?.gpr(*src).gpr(*mask).finish()
+			}
+			_ => return invalid_operands(inst, source),
+		},
+		"test.any" => match operands {
+			[(C0(dst) | GPR(dst), span1), (GPR(src), _), (GPR(mask), _)] => {
+				build = build.b4(OP_DPR).b4(DPR_3REG).b4(DPR_3R_G2).b3(1).b2(0);
+				build.cond(*dst, *span1)?.gpr(*src).gpr(*mask).finish()
+			}
+			[(C0(dst) | GPR(dst), span1), (GPR(src), _), (LogicImd { level, ones, rot }, _)] => {
+				let build = build.b4(OP_DPI).b4(8).b1(0).limd_l0(*level).cond(*dst, *span1)?;
+				build.gpr(*src).logic_imd(*level, *ones, *rot).finish()
+			}
+			_ => return invalid_operands(inst, source),
+		},
+		"test.any.and" => match operands {
+			[(C0(dst) | GPR(dst), span1), (GPR(src), _), (GPR(mask), _)] => {
+				build = build.b4(OP_DPR).b4(DPR_3REG).b4(DPR_3R_G2).b3(1).b2(1);
+				build.cond(*dst, *span1)?.gpr(*src).gpr(*mask).finish()
+			}
+			[(C0(dst) | GPR(dst), span1), (GPR(src), _), (LogicImd { level, ones, rot }, _)] => {
+				let build = build.b4(OP_DPI).b4(8).b1(1).limd_l0(*level).cond(*dst, *span1)?;
+				build.gpr(*src).logic_imd(*level, *ones, *rot).finish()
+			}
+			_ => return invalid_operands(inst, source),
+		},
+		"test.any.or" => match operands {
+			[(C0(dst) | GPR(dst), span1), (GPR(src), _), (GPR(mask), _)] => {
+				build = build.b4(OP_DPR).b4(DPR_3REG).b4(DPR_3R_G2).b3(1).b2(3);
+				build.cond(*dst, *span1)?.gpr(*src).gpr(*mask).finish()
+			}
+			_ => return invalid_operands(inst, source),
+		},
+		"test.all" => match operands {
+			[(C0(dst) | GPR(dst), span1), (GPR(src), _), (GPR(mask), _)] => {
+				build = build.b4(OP_DPR).b4(DPR_3REG).b4(DPR_3R_G2).b3(2).b2(0);
+				build.cond(*dst, *span1)?.gpr(*src).gpr(*mask).finish()
+			}
+			[(C0(dst) | GPR(dst), span1), (GPR(src), _), (LogicImd { level, ones, rot }, _)] => {
+				let build = build.b4(OP_DPI).b4(9).b1(0).limd_l0(*level).cond(*dst, *span1)?;
+				build.gpr(*src).logic_imd(*level, *ones, *rot).finish()
+			}
+			_ => return invalid_operands(inst, source),
+		},
+		"test.all.and" => match operands {
+			[(C0(dst) | GPR(dst), span1), (GPR(src), _), (GPR(mask), _)] => {
+				build = build.b4(OP_DPR).b4(DPR_3REG).b4(DPR_3R_G2).b3(2).b2(1);
+				build.cond(*dst, *span1)?.gpr(*src).gpr(*mask).finish()
+			}
+			[(C0(dst) | GPR(dst), span1), (GPR(src), _), (LogicImd { level, ones, rot }, _)] => {
+				let build = build.b4(OP_DPI).b4(9).b1(1).limd_l0(*level).cond(*dst, *span1)?;
+				build.gpr(*src).logic_imd(*level, *ones, *rot).finish()
+			}
+			_ => return invalid_operands(inst, source),
+		},
+		"test.all.or" => match operands {
+			[(C0(dst) | GPR(dst), span1), (GPR(src), _), (GPR(mask), _)] => {
+				build = build.b4(OP_DPR).b4(DPR_3REG).b4(DPR_3R_G2).b3(2).b2(3);
+				build.cond(*dst, *span1)?.gpr(*src).gpr(*mask).finish()
 			}
 			_ => return invalid_operands(inst, source),
 		},

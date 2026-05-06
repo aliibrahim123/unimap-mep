@@ -200,4 +200,20 @@ impl InstBuilder<'_> {
 			Shift::ROL(amount) => self.b(3, 2).b(amount as u32, 6),
 		}
 	}
+	pub fn limd_l0(self, level: u8) -> Self {
+		self.b1(if level == 64 { 0 } else { 1 })
+	}
+	pub fn logic_imd(self, level: u8, ones: u8, rot: u8) -> Self {
+		let ones = ones - 1;
+		let ones = match level {
+			64 => ones,
+			32 => ones,
+			16 => ones | 0b100000,
+			8 => ones | 0b110000,
+			4 => ones | 0b111000,
+			2 => ones | 0b111100,
+			_ => unreachable!(),
+		};
+		self.b6(ones).b6(rot)
+	}
 }
