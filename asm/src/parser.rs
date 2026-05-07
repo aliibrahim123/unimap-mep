@@ -534,7 +534,7 @@ fn parse_inst(cur: &Cursor) -> Result<Inst, Error> {
 	}
 	let start_span = mnemonic.span;
 
-	if cur.test(NL) {
+	if cur.test(NL) || cur.is_end() {
 		return Ok(Inst { mnemonic, operands: vec![], span: start_span });
 	}
 
