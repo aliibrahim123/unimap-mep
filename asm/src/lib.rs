@@ -9,8 +9,8 @@ pub mod utils;
 
 pub fn compile(src: &str, path: &str) -> Result<String, utils::Error> {
 	let mut source = Source::new(src, path);
-	let mut lines = parse(&mut source)?;
-	let bin = encode(&mut lines, &source)?;
+	let lines = parse(&mut source)?;
+	let bin = encode(lines, &source)?;
 	let res = expressify(&bin);
 	Ok(res)
 }

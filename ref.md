@@ -202,8 +202,6 @@ They can be signed or unsigned and come in different sizes. The available sizes 
 - For unsigned immediates: 2 bits (`u2_imd`), 3 bits (`u3_imd`), 6 bits (`u6_imd`), 12 bits (`u12_imd`), 16 bits (`u16_imd`).
 - For signed immediates: 9 bits (`s9_imd`), 10 bits (`s10_imd`), 12 bits (`s12_imd`), 19 bits (`s19_imd`), and 24 bits (`s24_imd`).
 
-A sign prefix is forbidden for unsigned immediates and required for signed ones.
-
 Some immediates (specifically addresses) are scaled by the data width. This means the immediate must be a multiple of the data width, and the assembler will shift the immediate down before insertion.
 
 ```

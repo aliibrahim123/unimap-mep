@@ -347,13 +347,13 @@ export default [
 		fields: [op_mem, b2(2), b6(0), { name: "op" }, sz, "s", gpr("reg"), gpr("base"), gpr("index")]
 	}, {
 		name: "ld_base_index",
-		fields: [op_mem, b2(2), b6(0), b2(0), sz, "s", gpr("reg"), gpr("base"), gpr("index")]
+		fields: [op_mem, b2(2), b6(0), b2(0), sz, "s", gpr("dst"), gpr("base"), gpr("index")]
 	}, {
 		name: "st_base_index",
-		fields: [op_mem, b2(2), b6(0), b2(1), sz, "s", gpr("reg"), gpr("base"), gpr("index")]
+		fields: [op_mem, b2(2), b6(0), b2(1), sz, "s", gpr("src"), gpr("base"), gpr("index")]
 	}, {
 		name: "ld_s_base_index",
-		fields: [op_mem, b2(2), b6(0), b2(2), sz, "s", gpr("reg"), gpr("base"), gpr("index")]
+		fields: [op_mem, b2(2), b6(0), b2(2), sz, "s", gpr("dst"), gpr("base"), gpr("index")]
 	}, {
 		name: "br",
 		fields: [op_branch, b4(0), s24_imd("offset")]

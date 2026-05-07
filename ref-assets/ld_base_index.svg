@@ -58,7 +58,7 @@
   <rect x="218.75" y="25" width="109.375" height="40" class="box-line" />
   <text x="222.75" y="15" text-anchor="start" class="bit-idx">21</text>
   <text x="324.125" y="15" text-anchor="end" class="bit-idx">17</text>
-  <text x="273.4375" y="50" class="content-var">reg</text>
+  <text x="273.4375" y="50" class="content-var">dst</text>
   <rect x="218.75" y="65" width="109.375" height="24" class="box-type" />
   <text x="273.4375" y="81" class="field-type">gpr</text>
   <rect x="109.375" y="25" width="109.375" height="40" class="box-line" />

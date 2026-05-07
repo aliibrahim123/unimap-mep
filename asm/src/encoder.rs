@@ -4,9 +4,9 @@ use compact_str::CompactString;
 
 use crate::{
 	inst_encoder::encode_inst,
-	parser::{AsmLine, AsmLineKind, Const, ConstKind, Operand, OperandKind, Reg, SImd, Shift},
+	parser::{AsmLine, AsmLineKind, Const, ConstKind, Reg, Shift},
 	tokenizer::{Source, Span},
-	utils::{Error, bit_insert, err},
+	utils::{Error, StrExt, bit_insert, err},
 };
 
 fn reg_code(reg: Reg) -> u8 {
@@ -76,16 +76,16 @@ fn encode_const(bin: &mut Vec<u8>, cons: &Const) {
 	}
 }
 
-pub fn encode(lines: &mut [AsmLine], source: &Source) -> Result<Vec<u8>, Error> {
-	let (label_indexes, len) = resolve_offsets(lines)?;
+pub fn encode(mut lines: Vec<AsmLine>, source: &Source) -> Result<Vec<u8>, Error> {
+	let (label_indexes, len) = resolve_offsets(&mut lines)?;
 	let mut bin = Vec::with_capacity(len);
 
 	for line in lines {
 		if line.pad > 0 {
 			bin.resize(bin.len() + line.pad as usize, 0);
 		}
-		match &line.kind {
-			AsmLineKind::Const(cons) => encode_const(&mut bin, cons),
+		match line.kind {
+			AsmLineKind::Const(cons) => encode_const(&mut bin, &cons),
 			AsmLineKind::Inst(inst) => {
 				let inst = encode_inst(inst, bin.len() as u64, &label_indexes, source)?;
 				bin.extend_from_slice(&inst.to_le_bytes());
@@ -105,15 +105,11 @@ pub struct InstBuilder<'a> {
 	pub inst: u32,
 	pub index: u8,
 	pub source: &'a Source<'a>,
-	pub label_indexes: &'a LabelIndexes,
-	pub inst_index: u64,
 }
 
 impl InstBuilder<'_> {
-	pub fn new<'b>(
-		source: &'b Source<'b>, label_indexes: &'b LabelIndexes, inst_index: u64,
-	) -> InstBuilder<'b> {
-		InstBuilder { inst: 0, index: 0, source, label_indexes, inst_index }
+	pub fn new<'b>(source: &'b Source<'b>) -> InstBuilder<'b> {
+		InstBuilder { inst: 0, index: 0, source }
 	}
 	pub fn finish(self) -> u32 {
 		assert!(self.index == 32);
@@ -164,33 +160,34 @@ impl InstBuilder<'_> {
 			_ => Ok(self.b(reg_code(reg) as u32, 5)),
 		}
 	}
-	pub fn u_imd(self, value: u64, len: u8, span: Span) -> Result<Self, Error> {
-		if value > (1 << len) - 1 {
-			let src = self.source.source_of(span);
-			return err!("number ({src}) out of range for u{len}_imd", (span, self.source));
+	fn imd_subject(self, span: Span) -> String {
+		let src = self.source.source_of(span);
+		match src.char_at(0).unwrap() {
+			'-' | '+' | '0'..='9' => format!("number ({src})"),
+			_ => format!("label \"{src}\" offset"),
+		}
+	}
+	pub fn u_imd(self, value: i64, len: u8, span: Span) -> Result<Self, Error> {
+		if value > (1 << len) - 1 || value < 0 {
+			let what = self.imd_subject(span);
+			return err!("{what} out of range for u{len}_imd", (span, self.source));
 		}
 		Ok(self.b(value as u32, len))
 	}
-	pub fn s_imd(self, imd: &SImd, len: u8, span: Span) -> Result<Self, Error> {
-		let value = match imd {
-			SImd::I64(nb) => *nb,
-			SImd::Label(label) => {
-				let Some(ind) = self.label_indexes.get(&label.name) else {
-					return err!("label {label} not found", (span, self.source));
-				};
-				*ind as i64 - self.inst_index as i64
-			}
-		};
+	pub fn s_imd(self, value: i64, len: u8, span: Span) -> Result<Self, Error> {
 		if value > (1 << (len - 1)) - 1 || value < -(1 << (len - 1)) {
-			let what = if let SImd::I64(label) = imd {
-				format!("label \"{label}\" offset")
-			} else {
-				let src = self.source.source_of(span);
-				format!("number ({src})")
-			};
+			let what = self.imd_subject(span);
 			return err!("{what} out of range for s{len}_imd", (span, self.source));
 		}
 		Ok(self.b(value as u32, len))
+	}
+	pub fn scaled_s_imd(self, imd: i64, len: u8, scale: u32, span: Span) -> Result<Self, Error> {
+		let pow_scale = 2u64.pow(scale);
+		if !(imd as u64).is_multiple_of(pow_scale) {
+			let what = self.imd_subject(span);
+			return err!("{what} must be multiple of {pow_scale}", (span, self.source));
+		}
+		self.s_imd(imd >> scale, len, span)
 	}
 	pub fn shift(self, shift: Shift) -> Self {
 		match shift {
@@ -215,5 +212,20 @@ impl InstBuilder<'_> {
 			_ => unreachable!(),
 		};
 		self.b6(ones).b6(rot)
+	}
+	pub fn s_imd_no_sbit(self, value: i64, len: u8, span: Span) -> Result<Self, Error> {
+		if value > (1 << len) - 1 || value < -(1 << len) {
+			let what = self.imd_subject(span);
+			return err!("{what} out of range for s{len}_imd", (span, self.source));
+		}
+		Ok(self.b(value as u32, len))
+	}
+	pub fn ind_sh(self, shift: u8, size: u8, shift_span: Span) -> Result<Self, Error> {
+		let src = self.source.source_of(shift_span);
+		match shift {
+			0 => Ok(self.b1(0)),
+			_ if shift == size => Ok(self.b1(1)),
+			_ => err!("invalid shift amount ({src})", (shift_span, self.source)),
+		}
 	}
 }

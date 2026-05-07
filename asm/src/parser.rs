@@ -87,23 +87,18 @@ pub enum Shift {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum SImd {
-	I64(i64),
-	Label(Ident),
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum OperandKind {
 	GPR(Reg),
 	PC(Reg),
 	C0(Reg),
 	ShReg(Reg, Shift),
-	UImd(u64),
-	SImd(SImd),
+	Imd(i64),
+	Label(Ident),
 	LogicImd { level: u8, ones: u8, rot: u8 },
-	Offset(SImd),
+	Offset(i64, Span),
+	OffsetLabel(Ident),
 	BaseOffset { base: Reg, offset: i64, offset_span: Span, writeback: bool },
-	BaseIndex { base: Reg, index: Reg, shift: u8 },
+	BaseIndex { base: Reg, index: Reg, shift: u8, shift_span: Span },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -166,6 +161,9 @@ impl<'a> Cursor<'a> {
 	}
 	pub fn peek_next(&self) -> &Token<'a> {
 		&self.tokens.get(self.ind.get() + 1).unwrap_or(&Token::EOF)
+	}
+	pub fn back(&self) -> &Token<'_> {
+		&self.tokens[self.ind.get() - 1]
 	}
 	pub fn skip(&self) -> Span {
 		let span = self.peek().span;
@@ -381,15 +379,19 @@ fn try_parse_gpr(ident: &str) -> Option<Reg> {
 	}
 }
 
-fn try_parse_simd(cur: &Cursor) -> Result<Option<(SImd, Span)>, Error> {
-	if !matches!(cur.peek().kind, Minus | Plus) {
+fn try_parse_imd(cur: &Cursor) -> Result<Option<(i64, Span, Sign)>, Error> {
+	let start_span = cur.peek().span;
+	let (nb, sign) = if let Some((nb, _)) = cur.try_consume_nb() {
+		(nb, Sign::Pos)
+	} else if cur.try_eat(Minus) {
+		(cur.consume_nb()?.0, Sign::Neg)
+	} else if cur.try_eat(Plus) {
+		(cur.consume_nb()?.0, Sign::Pos)
+	} else {
 		return Ok(None);
-	}
-	let is_neg = cur.peek().kind == Minus;
-	let sign_span = cur.skip();
-	let (nb, nb_span) = cur.consume_nb()?;
-	let nb = into_i64(cur, "signed immediate", nb, is_neg, nb_span)?;
-	Ok(Some((SImd::I64(nb), Span::join(sign_span, nb_span))))
+	};
+	let nb = into_i64(cur, "immediate", nb, sign == Sign::Neg, start_span)?;
+	Ok(Some((nb, Span::join(start_span, cur.back().span), sign)))
 }
 fn parse_logic_imd(cur: &Cursor, ident: &Ident) -> Result<Operand, Error> {
 	cur.consume(ParanOpen)?;
@@ -426,17 +428,17 @@ fn parse_logic_imd(cur: &Cursor, ident: &Ident) -> Result<Operand, Error> {
 	return Ok(Operand { kind, span: Span::join(ident.span, end_span) });
 }
 fn parse_address(cur: &Cursor) -> Result<OperandKind, Error> {
-	use OperandKind::{BaseIndex, BaseOffset, Offset};
-	if let Some((nb, _)) = try_parse_simd(cur)? {
-		return Ok(Offset(nb));
+	use OperandKind::{BaseIndex, BaseOffset, Offset, OffsetLabel};
+	if let Some((nb, span, _)) = try_parse_imd(cur)? {
+		return Ok(Offset(nb, span));
 	}
 
 	let ident = cur.consume_ident()?;
 	let Some(base) = try_parse_gpr(&ident.name) else {
-		return Ok(Offset(SImd::Label(ident)));
+		return Ok(OffsetLabel(ident));
 	};
 	if !matches!(cur.peek().kind, Plus | Minus) {
-		return Ok(BaseIndex { base, index: Reg::R0, shift: 0 });
+		return Ok(BaseIndex { base, index: Reg::R0, shift: 0, shift_span: Span::none() });
 	}
 
 	let is_neg = cur.peek().kind == Minus;
@@ -449,18 +451,18 @@ fn parse_address(cur: &Cursor) -> Result<OperandKind, Error> {
 			return unexpected_token(&ident.name, "register", ident.span, cur.source);
 		};
 
-		let shift = if let Some(ident) = cur.try_consume_ident() {
+		let (shift, shift_span) = if let Some(ident) = cur.try_consume_ident() {
 			if ident.name != "shl" {
 				return unexpected_token(&ident.name, "\"shl\"", ident.span, cur.source);
 			}
 			let (amount, amount_span) = cur.consume_nb()?;
 			check_nb_range(cur, "shift amount", amount, 63, amount_span)?;
-			amount as u8
+			(amount as u8, amount_span)
 		} else {
-			0
+			(0, Span::none())
 		};
 
-		Ok(BaseIndex { base, index, shift })
+		Ok(BaseIndex { base, index, shift, shift_span })
 	} else {
 		let writeback = cur.try_eat(Eq);
 		let (offset, offset_span) = cur.consume_nb()?;
@@ -481,7 +483,7 @@ fn parse_operand(cur: &Cursor) -> Result<Operand, Error> {
 			return Ok(Operand { span: ident.span, kind: PC(Reg::PC) });
 		}
 		let Some(reg) = try_parse_gpr(&ident.name) else {
-			return Ok(Operand { span: ident.span, kind: SImd(self::SImd::Label(ident)) });
+			return Ok(Operand { span: ident.span, kind: Label(ident) });
 		};
 
 		if let Some(sh_ident) = cur.try_consume_ident() {
@@ -504,10 +506,8 @@ fn parse_operand(cur: &Cursor) -> Result<Operand, Error> {
 		} else {
 			Ok(Operand { span: ident.span, kind: GPR(reg) })
 		}
-	} else if let Some((nb, span)) = cur.try_consume_nb() {
-		Ok(Operand { span, kind: UImd(nb) })
-	} else if let Some((nb, span)) = try_parse_simd(cur)? {
-		Ok(Operand { span, kind: SImd(nb) })
+	} else if let Some((nb, span, _)) = try_parse_imd(cur)? {
+		Ok(Operand { span, kind: Imd(nb) })
 	} else if let Some(start_span) = cur.try_consume(BracketOpen) {
 		let kind = parse_address(cur)?;
 		let end_span = cur.consume(BracketClose)?;
