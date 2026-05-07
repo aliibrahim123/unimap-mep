@@ -945,8 +945,66 @@ pub fn encode_inst(
 			}
 			_ => return invalid_operands(&mnemonic, inst.span, source),
 		},
+		"br" => match operands {
+			[(Imd(offset), span1)] => {
+				build.b4(OP_BRANCH).b4(0).scaled_s_imd(*offset, 24, 2, *span1)?.finish()
+			}
+			[(GPR(link), _), (Imd(offset), span1)] => {
+				build.b4(OP_BRANCH).b4(1).scaled_s_imd(*offset, 19, 2, *span1)?.gpr(*link).finish()
+			}
+			_ => return invalid_operands(&mnemonic, inst.span, source),
+		},
+		"br.false" => match operands {
+			[(C0(cond) | GPR(cond), span1), (Imd(offset), span2)] => {
+				let build = build.b4(OP_BRANCH).b4(2).scaled_s_imd(*offset, 19, 2, *span2)?;
+				build.cond(*cond, *span1)?.finish()
+			}
+			_ => return invalid_operands(&mnemonic, inst.span, source),
+		},
+		"br.true" => match operands {
+			[(C0(cond) | GPR(cond), span1), (Imd(offset), span2)] => {
+				let build = build.b4(OP_BRANCH).b4(3).scaled_s_imd(*offset, 19, 2, *span2)?;
+				build.cond(*cond, *span1)?.finish()
+			}
+			_ => return invalid_operands(&mnemonic, inst.span, source),
+		},
+		"jmp" => match operands {
+			[(BaseIndex { base, index, shift, shift_span }, _)] => {
+				let sh = match shift {
+					2..=9 => shift - 2,
+					_ => {
+						let src = source.source_of(*shift_span);
+						return err!("invalid shift amount ({src})", (*shift_span, source));
+					}
+				} as i64;
+				let build = build.b4(OP_BRANCH).b4(4).b4(0).b2(0).u_imd(sh, 3, *shift_span)?;
+				build.gpr(*base).gpr(*index).gpr(R0).finish()
+			}
+			[(GPR(link), _), (BaseIndex { base, index, shift, shift_span }, _)] => {
+				let sh = match shift {
+					2..=9 => shift - 2,
+					_ => {
+						let src = source.source_of(*shift_span);
+						return err!("invalid shift amount ({src})", (*shift_span, source));
+					}
+				} as i64;
+				let build = build.b4(OP_BRANCH).b4(4).b4(0).b2(0).u_imd(sh, 3, *shift_span)?;
+				build.gpr(*base).gpr(*index).gpr(*link).finish()
+			}
+			[(BaseOffset { base, offset, offset_span, writeback: false }, _)] => {
+				let build = build.b4(OP_BRANCH).b4(4).b4(1);
+				build.scaled_s_imd(*offset, 10, 2, *offset_span)?.gpr(*base).gpr(R0).finish()
+			}
+			[(GPR(link), _), (BaseOffset { base, offset, offset_span, writeback: false }, _)] => {
+				let build = build.b4(OP_BRANCH).b4(4).b4(1);
+				build.scaled_s_imd(*offset, 10, 2, *offset_span)?.gpr(*base).gpr(*link).finish()
+			}
+			_ => return invalid_operands(&mnemonic, inst.span, source),
+		},
+		"halt" => match operands {
+			[] => build.b4(OP_BRANCH).b4(0).b(0, 24).finish(),
+			_ => return invalid_operands(&mnemonic, inst.span, source),
+		},
 		_ => return undefined_instruction(&mnemonic, source),
 	})
-
-	/* */
 }
