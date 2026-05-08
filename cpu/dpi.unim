@@ -70,9 +70,9 @@ fn exec_comp (inst, state) => dec_2reg(inst[2], inst[3], inst[4]): {
 		},
 		6 => low1(inst[2]): {
 			// comp.gt cond:reg, src1:reg, src2:s12_imd
-			0 => comp(state.regs[src1], s12_imd(inst)): { 2 => 1, _ => 0 },
+			0 => comp(state.regs[src1], s12_imd(inst)): { 1 => 1, _ => 0 },
 			// ucomp.gt cond:reg, src1:reg, src2:s12_imd
-			1 => ucomp(state.regs[src1], u12_imd(inst)): { 2 => 1, _ => 0 },
+			1 => ucomp(state.regs[src1], u12_imd(inst)): { 1 => 1, _ => 0 },
 		},
 	} 
 	// write / and cond

@@ -197,10 +197,10 @@ fn exec_4regs (inst, state) => dec_4reg(inst[3], inst[4], inst[5], inst[6], inst
 		
 		// div.full quo:reg, rem:reg, src1:reg, src2:reg
 		6 => div(state.regs[src2], state.regs[src3]) 
-			|> write_2reg(state, dst, _[0], src2, _[1]),
+			|> write_2reg(state, dst, _[0], src1, _[1]),
 		// udiv.full quo:reg, rem:reg, src1:reg, src2:reg
 		7 => udiv(state.regs[src2], state.regs[src3]) 
-			|> write_2reg(state, dst, _[0], src2, _[1]),
+			|> write_2reg(state, dst, _[0], src1, _[1]),
 
 		// fush dst:reg, src_low:reg, src_high:reg, amount:reg
 		8 => funnel_shift(state.regs[src1], state.regs[src2], mod64(state.regs[src3]))

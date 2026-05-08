@@ -332,16 +332,16 @@ export default [
 		fields: [op_mem, b2(3), sz, s19_imd("offset"), gpr("dst")]
 	}, {
 		name: "mem_base_offset",
-		fields: [op_mem, b1(0), b1("w"), { name: "op" }, sz, gpr("reg"), gpr("base"), s12_imd("offset")]
+		fields: [op_mem, b1("w"), b1(0), { name: "op" }, sz, gpr("reg"), gpr("base"), s12_imd("offset")]
 	}, {
 		name: "ld_base_offset",
-		fields: [op_mem, b1(0), b1("w"), b2(0), sz, gpr("dst"), gpr("base"), s12_imd("offset")]
+		fields: [op_mem, b1("w"), b1(0), b2(0), sz, gpr("dst"), gpr("base"), s12_imd("offset")]
 	}, {
 		name: "st_base_offset",
-		fields: [op_mem, b1(0), b1("w"), b2(1), sz, gpr("src"), gpr("base"), s12_imd("offset")]
+		fields: [op_mem, b1("w"), b1(0), b2(1), sz, gpr("src"), gpr("base"), s12_imd("offset")]
 	}, {
 		name: "ld_s_base_offset",
-		fields: [op_mem, b1(0), b1("w"), b2(2), sz, gpr("dst"), gpr("base"), s12_imd("offset")]
+		fields: [op_mem, b1("w"), b1(0), b2(2), sz, gpr("dst"), gpr("base"), s12_imd("offset")]
 	}, {
 		name: "mem_base_index",
 		fields: [op_mem, b2(2), b6(0), { name: "op" }, sz, "s", gpr("reg"), gpr("base"), gpr("index")]
@@ -430,7 +430,7 @@ export default [
 		fields: [op_mem, f2("amod"), x(26)]
 	}, {
 		name: "mem_base_offset_enc",
-		fields: [op_mem, b1(0), b1("w"), f2("op"), sz, gpr("reg"), gpr("base"), s12_imd("offset")]
+		fields: [op_mem, b1("w"), b1(0), f2("op"), sz, gpr("reg"), gpr("base"), s12_imd("offset")]
 	}, {
 		name: "mem_base_index_enc",
 		fields: [op_mem, b2(2), b6(0), f2("op"), sz, f1("s"), gpr("reg"), gpr("base"), gpr("index")]

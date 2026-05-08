@@ -684,7 +684,7 @@ pub fn encode_inst(
 					return err!("width ({src}) cannot be 0", (*span2, source));
 				}
 				build = build.b4(OP_DPI).b4(12).b2(0).gpr(*dst).gpr(*src);
-				build.u_imd(*offset, 6, *span1)?.u_imd(*width, 6, *span2)?.finish()
+				build.u_imd(*offset, 6, *span1)?.u_imd(*width - 1, 6, *span2)?.finish()
 			}
 			_ => return invalid_operands(&mnemonic, inst.span, source),
 		},
@@ -699,7 +699,7 @@ pub fn encode_inst(
 					return err!("width ({src}) cannot be 0", (*span2, source));
 				}
 				build = build.b4(OP_DPI).b4(12).b2(1).gpr(*dst).gpr(*src);
-				build.u_imd(*offset, 6, *span1)?.u_imd(*width, 6, *span2)?.finish()
+				build.u_imd(*offset, 6, *span1)?.u_imd(*width - 1, 6, *span2)?.finish()
 			}
 			_ => return invalid_operands(&mnemonic, inst.span, source),
 		},
@@ -815,7 +815,7 @@ pub fn encode_inst(
 				build.gpr(*dst).finish()
 			}
 			[(GPR(dst), _), (BaseOffset { base, offset, offset_span, writeback }, _)] => {
-				build = build.b4(OP_MEM).b1(0).b1(*writeback as u8).b2(0).b2(0).gpr(*dst);
+				build = build.b4(OP_MEM).b1(*writeback as u8).b1(0).b2(0).b2(0).gpr(*dst);
 				build.gpr(*base).scaled_s_imd(*offset, 12, 3, *offset_span)?.finish()
 			}
 			[(GPR(dst), _), (BaseIndex { base, index, shift, shift_span }, _)] => {
@@ -830,8 +830,8 @@ pub fn encode_inst(
 				build.gpr(*dst).finish()
 			}
 			[(GPR(dst), _), (BaseOffset { base, offset, offset_span, writeback }, _)] => {
-				build = build.b4(OP_MEM).b1(0).b1(*writeback as u8).b2(0).b2(1).gpr(*dst);
-				build.gpr(*base).scaled_s_imd(*offset, 12, 3, *offset_span)?.finish()
+				build = build.b4(OP_MEM).b1(*writeback as u8).b1(0).b2(0).b2(1).gpr(*dst);
+				build.gpr(*base).scaled_s_imd(*offset, 12, 2, *offset_span)?.finish()
 			}
 			[(GPR(dst), _), (BaseIndex { base, index, shift, shift_span }, _)] => {
 				build = build.b4(OP_MEM).b2(2).b6(0).b2(0).b2(1).ind_sh(*shift, 2, *shift_span)?;
@@ -845,7 +845,7 @@ pub fn encode_inst(
 				build.gpr(*dst).finish()
 			}
 			[(GPR(dst), _), (BaseOffset { base, offset, offset_span, writeback }, _)] => {
-				build = build.b4(OP_MEM).b1(0).b1(*writeback as u8).b2(0).b2(2).gpr(*dst);
+				build = build.b4(OP_MEM).b1(*writeback as u8).b1(0).b2(0).b2(2).gpr(*dst);
 				build.gpr(*base).scaled_s_imd(*offset, 12, 1, *offset_span)?.finish()
 			}
 			[(GPR(dst), _), (BaseIndex { base, index, shift, shift_span }, _)] => {
@@ -859,7 +859,7 @@ pub fn encode_inst(
 				build.b4(OP_MEM).b2(3).b2(3).s_imd(*offset, 19, *span1)?.gpr(*dst).finish()
 			}
 			[(GPR(dst), _), (BaseOffset { base, offset, offset_span, writeback }, _)] => {
-				build = build.b4(OP_MEM).b1(0).b1(*writeback as u8).b2(0).b2(3).gpr(*dst);
+				build = build.b4(OP_MEM).b1(*writeback as u8).b1(0).b2(0).b2(3).gpr(*dst);
 				build.gpr(*base).s_imd(*offset, 12, *offset_span)?.finish()
 			}
 			[(GPR(dst), _), (BaseIndex { base, index, shift: 0, .. }, _)] => {
@@ -870,7 +870,7 @@ pub fn encode_inst(
 		},
 		"st" => match operands {
 			[(GPR(src), _), (BaseOffset { base, offset, offset_span, writeback }, _)] => {
-				build = build.b4(OP_MEM).b1(0).b1(*writeback as u8).b2(1).b2(0).gpr(*src);
+				build = build.b4(OP_MEM).b1(*writeback as u8).b1(0).b2(1).b2(0).gpr(*src);
 				build.gpr(*base).scaled_s_imd(*offset, 12, 3, *offset_span)?.finish()
 			}
 			[(GPR(src), _), (BaseIndex { base, index, shift, shift_span }, _)] => {
@@ -881,7 +881,7 @@ pub fn encode_inst(
 		},
 		"st.32" => match operands {
 			[(GPR(src), _), (BaseOffset { base, offset, offset_span, writeback }, _)] => {
-				build = build.b4(OP_MEM).b1(0).b1(*writeback as u8).b2(1).b2(1).gpr(*src);
+				build = build.b4(OP_MEM).b1(*writeback as u8).b1(0).b2(1).b2(1).gpr(*src);
 				build.gpr(*base).scaled_s_imd(*offset, 12, 2, *offset_span)?.finish()
 			}
 			[(GPR(src), _), (BaseIndex { base, index, shift, shift_span }, _)] => {
@@ -892,7 +892,7 @@ pub fn encode_inst(
 		},
 		"st.16" => match operands {
 			[(GPR(src), _), (BaseOffset { base, offset, offset_span, writeback }, _)] => {
-				build = build.b4(OP_MEM).b1(0).b1(*writeback as u8).b2(1).b2(2).gpr(*src);
+				build = build.b4(OP_MEM).b1(*writeback as u8).b1(0).b2(1).b2(2).gpr(*src);
 				build.gpr(*base).scaled_s_imd(*offset, 12, 1, *offset_span)?.finish()
 			}
 			[(GPR(src), _), (BaseIndex { base, index, shift, shift_span }, _)] => {
@@ -903,7 +903,7 @@ pub fn encode_inst(
 		},
 		"st.8" => match operands {
 			[(GPR(src), _), (BaseOffset { base, offset, offset_span, writeback }, _)] => {
-				build = build.b4(OP_MEM).b1(0).b1(*writeback as u8).b2(1).b2(3).gpr(*src);
+				build = build.b4(OP_MEM).b1(*writeback as u8).b1(0).b2(1).b2(3).gpr(*src);
 				build.gpr(*base).s_imd(*offset, 12, *offset_span)?.finish()
 			}
 			[(GPR(src), _), (BaseIndex { base, index, shift: 0, .. }, _)] => {
@@ -914,7 +914,7 @@ pub fn encode_inst(
 		},
 		"ld.s32" => match operands {
 			[(GPR(dst), _), (BaseOffset { base, offset, offset_span, writeback }, _)] => {
-				build = build.b4(OP_MEM).b1(0).b1(*writeback as u8).b2(2).b2(1).gpr(*dst);
+				build = build.b4(OP_MEM).b1(*writeback as u8).b1(0).b2(2).b2(1).gpr(*dst);
 				build.gpr(*base).scaled_s_imd(*offset, 12, 3, *offset_span)?.finish()
 			}
 			[(GPR(dst), _), (BaseIndex { base, index, shift, shift_span }, _)] => {
@@ -925,7 +925,7 @@ pub fn encode_inst(
 		},
 		"ld.s16" => match operands {
 			[(GPR(dst), _), (BaseOffset { base, offset, offset_span, writeback }, _)] => {
-				build = build.b4(OP_MEM).b1(0).b1(*writeback as u8).b2(2).b2(2).gpr(*dst);
+				build = build.b4(OP_MEM).b1(*writeback as u8).b1(0).b2(2).b2(2).gpr(*dst);
 				build.gpr(*base).scaled_s_imd(*offset, 12, 1, *offset_span)?.finish()
 			}
 			[(GPR(dst), _), (BaseIndex { base, index, shift, shift_span }, _)] => {
@@ -936,7 +936,7 @@ pub fn encode_inst(
 		},
 		"ld.s8" => match operands {
 			[(GPR(dst), _), (BaseOffset { base, offset, offset_span, writeback }, _)] => {
-				build = build.b4(OP_MEM).b1(0).b1(*writeback as u8).b2(2).b2(3).gpr(*dst);
+				build = build.b4(OP_MEM).b1(*writeback as u8).b1(0).b2(2).b2(3).gpr(*dst);
 				build.gpr(*base).s_imd(*offset, 12, *offset_span)?.finish()
 			}
 			[(GPR(dst), _), (BaseIndex { base, index, shift: 0, .. }, _)] => {

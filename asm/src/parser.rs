@@ -438,7 +438,7 @@ fn parse_address(cur: &Cursor) -> Result<OperandKind, Error> {
 		return Ok(OffsetLabel(ident));
 	};
 	if !matches!(cur.peek().kind, Plus | Minus) {
-		return Ok(BaseIndex { base, index: Reg::R0, shift: 0, shift_span: Span::none() });
+		return Ok(BaseOffset { base, offset: 0, offset_span: Span::none(), writeback: false });
 	}
 
 	let is_neg = cur.peek().kind == Minus;

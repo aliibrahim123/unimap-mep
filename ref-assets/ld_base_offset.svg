@@ -31,10 +31,10 @@
   <text x="689.0625" y="50" class="content-fixed">1</text>
   <rect x="590.625" y="25" width="21.875" height="40" class="box-line" />
   <text x="601.5625" y="15" text-anchor="middle" class="bit-idx">4</text>
-  <text x="601.5625" y="50" class="content-fixed">0</text>
+  <text x="601.5625" y="50" class="content-fixed">w</text>
   <rect x="568.75" y="25" width="21.875" height="40" class="box-line" />
   <text x="579.6875" y="15" text-anchor="middle" class="bit-idx">5</text>
-  <text x="579.6875" y="50" class="content-fixed">w</text>
+  <text x="579.6875" y="50" class="content-fixed">0</text>
   <rect x="525" y="25" width="43.75" height="40" class="box-line" />
   <text x="529" y="15" text-anchor="start" class="bit-idx">7</text>
   <text x="564.75" y="15" text-anchor="end" class="bit-idx">6</text>

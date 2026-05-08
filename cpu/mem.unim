@@ -77,7 +77,7 @@ fn read_mem_8 (state, address) => read_mem_line(state, address) |> address[0]: {
 
 fn safe_read (obj, field) => obj: { { [field]: let val } => val, _ => {} };
 fn write_mem_line (state, address, line) => { ..state, mem = {
-  ..state.mem, [address[7]] = safe_read(mem, address[7]) |> { 
+  ..state.mem, [address[7]] = safe_read(state.mem, address[7]) |> { 
 	.._, [address[6]] = safe_read(_, address[6]) |> { 
 	  .._, [address[5]] = safe_read(_, address[5]) |> { 
 		.._, [address[4]] = safe_read(_, address[4]) |> {
