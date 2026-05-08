@@ -182,11 +182,6 @@ impl InstBuilder<'_> {
 		Ok(self.b(value as u32, len))
 	}
 	pub fn scaled_s_imd(self, imd: i64, len: u8, scale: u32, span: Span) -> Result<Self, Error> {
-		let pow_scale = 2u64.pow(scale);
-		if !(imd as u64).is_multiple_of(pow_scale) {
-			let what = self.imd_subject(span);
-			return err!("{what} must be multiple of {pow_scale}", (span, self.source));
-		}
 		self.s_imd(imd >> scale, len, span)
 	}
 	pub fn shift(self, shift: Shift) -> Self {
