@@ -1324,6 +1324,17 @@ Branches by a `pc`-relative `offset` scaled by 4 bytes, based on the `cond` regi
 
 If the `c` field is `1`, the branch is taken if `cond` is `true`, otherwise, it takes the inverse.
 
+
+### br.table
+```
+br.table link?:gpr, index:sh_reg
+```
+![br table encoding](./ref-assets/br_table.svg)
+
+Stores the address of the next instruction in the `link` register, then performs an a table unconditional branch.
+
+the address is computed from the next instruction address plus an `index` register scaled by 4 bytes and further shifted by a `u3_imd`.
+
 ## Jumps
 ### jmp
 ```
@@ -1332,14 +1343,6 @@ jmp link?:gpr, dst:gpr
 ![jmp encoding](./ref-assets/jmp.svg)
 
 Stores the address of the next instruction in the `link` register, then performs an unconditional branch to the address stored in the `dst` register.
-
-### jmp.table
-```
-jmp.table link?:gpr, index:sh_reg
-```
-![jmp table encoding](./ref-assets/jmp_table.svg)
-
-Stores the address of the next instruction in the `link` register, then performs an unconditional branch to an address computed from `pc` plus an `index` register scaled by 4 bytes and further shifted by a `u3_imd`.
 
 ### halt
 ```
@@ -1603,4 +1606,4 @@ Halts and ends execution without catching on fire.
 | `0001` | `_` | [`br` link](#br-link) |
 | `001x` | `_` | [`br.cond`](#br-cond) |
 | `0100` | `000` | [`jmp`](#jmp) |
-| `0100` | `001` | [`jmp.table`](#jmptable) |
+| `0100` | `001` | [`br.table`](#brtable) |

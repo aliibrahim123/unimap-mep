@@ -1010,7 +1010,7 @@ pub fn encode_inst(
 			}
 			_ => return invalid_operands(&mnemonic, inst.span, source),
 		},
-		"jmp.table" => match operands {
+		"br.table" => match operands {
 			[(ShReg(index, Shift::SHL(sh), shift_span), _)] => {
 				let sh = match sh {
 					2..=9 => sh - 2,

@@ -367,7 +367,7 @@ export default [
 		name: "jmp",
 		fields: [op_branch, b4(4), b8(0), b3(0), b3(0), gpr("link"), gpr("dst")]
 	}, {
-		name: "jmp_table",
+		name: "br_table",
 		fields: [op_branch, b4(4), b8(0), b3(1), u3_imd("sh"), gpr("link"), gpr("index")]
 	}, {
 		name: "halt",
