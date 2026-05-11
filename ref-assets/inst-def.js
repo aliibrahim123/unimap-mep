@@ -364,11 +364,11 @@ export default [
 		name: "br_cond",
 		fields: [op_branch, "c", b3(1), s19_imd("offset"), cond("cond")]
 	}, {
-		name: "jmp_index",
-		fields: [op_branch, b4(4), b4(0), b2(0), u3_imd("sh"), gpr("base"), gpr("index"), gpr("link")]
+		name: "jmp",
+		fields: [op_branch, b4(4), b8(0), b3(0), b3(0), gpr("link"), gpr("dst")]
 	}, {
-		name: "jmp_offset",
-		fields: [op_branch, b4(4), b4(1), s10_imd("offset"), gpr("base"), gpr("link")]
+		name: "jmp_table",
+		fields: [op_branch, b4(4), b8(0), b3(1), u3_imd("sh"), gpr("link"), gpr("index")]
 	}, {
 		name: "halt",
 		fields: [op_branch, b4(0), { value: 0, width: 24 }]
@@ -436,6 +436,6 @@ export default [
 		fields: [op_mem, b2(2), b6(0), f2("op"), sz, f1("s"), gpr("reg"), gpr("base"), gpr("index")]
 	}, {
 		name: "br_enc",
-		fields: [op_branch, f4("op1"), f4("op2"), x(20)]
+		fields: [op_branch, f4("op1"), x(8), f3("op2"), x(13)]
 	}
 ];

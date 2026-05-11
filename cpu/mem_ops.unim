@@ -1,4 +1,4 @@
-import cpu.common { panic, regs, pc, write_reg, dec_2reg, dec_3reg, dec_1reg, s12_imd, s19_imd };
+import cpu.common { invalid, regs, pc, write_reg, dec_2reg, dec_3reg, dec_1reg, s12_imd, s19_imd };
 import cpu.mem { 
 	read_mem_8, read_mem_16, read_mem_32, read_mem_64, 
 	write_mem_8, write_mem_16, write_mem_32, write_mem_64 
@@ -18,13 +18,13 @@ fn exec_mem (inst, state) => low2(inst[1]): {
 		0 => inst[2]: {
 			// op.size reg, [base:reg + index:reg << (0 | (3-sz)]
 			0 => exec_index(inst, state),
-			_ => panic(),
+			_ => invalid(state, inst),
 		},
-		_ => panic(),
+		_ => invalid(state, inst),
 	},
 };
 
-fn access_mem (state, reg, address, op, size) => op: {
+fn access_mem (state, inst, reg, address, op, size) => op: {
 	0 => size: {
 		// ld 
 		0 => read_mem_64(state, address),
@@ -46,7 +46,7 @@ fn access_mem (state, reg, address, op, size) => op: {
 		3 => write_mem_8(state, address, _),
 	},
 	2 => size: {
-		0 => panic(),
+		0 => invalid(state, inst),
 		// ld.s32
 		1 => read_mem_32(state, address) |> sign_ext32(_),
 		// ld.s16
@@ -54,12 +54,12 @@ fn access_mem (state, reg, address, op, size) => op: {
 		// ld.s8
 		3 => read_mem_8(state, address)  |> sign_ext8(_),
 	} |> write_reg(state, reg, _),
-	3 => panic(),
+	3 => invalid(state, inst),
 };
 
 fn exec_imd (inst, state, writeback) =>[dec_2reg(inst[2], inst[3], inst[4]), s12_imd(inst)]: {
 	[[let reg, let base], let imd] => cal_adress(state.regs[base], imd, low2(inst[2])): {
-		let address => access_mem(state, reg, address, high2(inst[1]), low2(inst[2]))
+		let address => access_mem(state, inst, reg, address, high2(inst[1]), low2(inst[2]))
 		|> writeback: {
 			0 => _,
 			1 => write_reg(_, base, address)
@@ -70,7 +70,7 @@ fn exec_imd (inst, state, writeback) =>[dec_2reg(inst[2], inst[3], inst[4]), s12
 fn exec_index (inst, state) => dec_3reg(inst[4], inst[5], inst[6], inst[7]): {
 	[let reg, let base, let index] => cal_adress(state.regs[base], state.regs[index], 
 		low1(inst[4]): { 0 => 0, 1 => high2(inst[3]) }
-	) |> access_mem(state, reg, _, low2(inst[3]), high2(inst[3]))
+	) |> access_mem(state, inst, reg, _, low2(inst[3]), high2(inst[3]))
 };
 
 fn exec_rel (inst, state) => cal_adress(state.pc, s19_imd(inst), high2(inst[1])) 
@@ -84,5 +84,5 @@ fn exec_rel (inst, state) => cal_adress(state.pc, s19_imd(inst), high2(inst[1]))
 
 fn cal_adress (base, offset, size) => size: {
 	0 => add(base, offset),
-	_ => add(base, shift_l1(offset, 0, size: { 0 => 3, 1 => 2, 2 => 1, 3 => 0 })),
+	_ => add(base, shift_l1(offset, 0, size: { 0 => 2, 1 => 2, 2 => 1, 3 => 0 })),
 };

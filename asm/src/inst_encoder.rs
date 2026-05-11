@@ -65,7 +65,7 @@ pub fn encode_inst(
 			[(GPR(dst), _), (GPR(src1), _), (GPR(src2), _)] => {
 				build.b4(OP_DPR).b4(8).shift(SH_0).b1(0).gpr(*dst).gpr(*src1).gpr(*src2).finish()
 			}
-			[(GPR(dst), _), (GPR(src1), _), (ShReg(src2, shift), _)] => {
+			[(GPR(dst), _), (GPR(src1), _), (ShReg(src2, shift, _), _)] => {
 				build.b4(OP_DPR).b4(8).shift(*shift).b1(0).gpr(*dst).gpr(*src1).gpr(*src2).finish()
 			}
 			[(GPR(dst), _), (GPR(src1) | PC(src1), span1), (Imd(src2), span2)] => {
@@ -89,10 +89,10 @@ pub fn encode_inst(
 			[(GPR(dst), _), (GPR(src1), _), (GPR(src2), _)] => {
 				build.b4(OP_DPR).b4(9).shift(SH_0).b1(0).gpr(*dst).gpr(*src1).gpr(*src2).finish()
 			}
-			[(GPR(dst), _), (GPR(src1), _), (ShReg(src2, shift), _)] => {
+			[(GPR(dst), _), (GPR(src1), _), (ShReg(src2, shift, _), _)] => {
 				build.b4(OP_DPR).b4(9).shift(*shift).b1(0).gpr(*dst).gpr(*src1).gpr(*src2).finish()
 			}
-			[(GPR(dst), _), (ShReg(src1, shift), _), (GPR(src2), _)] => {
+			[(GPR(dst), _), (ShReg(src1, shift, _), _), (GPR(src2), _)] => {
 				build.b4(OP_DPR).b4(10).shift(*shift).b1(0).gpr(*dst).gpr(*src2).gpr(*src1).finish()
 			}
 			[(GPR(dst), _), (GPR(src1), _), (Imd(src2), span2)] => {
@@ -199,7 +199,7 @@ pub fn encode_inst(
 			[(GPR(dst), _), (GPR(src), _)] => {
 				build.b4(OP_DPR).b4(9).shift(SH_0).b1(0).gpr(*dst).gpr(R0).gpr(*src).finish()
 			}
-			[(GPR(dst), _), (ShReg(src, shift), _)] => {
+			[(GPR(dst), _), (ShReg(src, shift, _), _)] => {
 				build.b4(OP_DPR).b4(9).shift(*shift).b1(0).gpr(*dst).gpr(R0).gpr(*src).finish()
 			}
 			_ => return invalid_operands(&mnemonic, inst.span, source),
@@ -419,7 +419,7 @@ pub fn encode_inst(
 			[(GPR(dst), _), (GPR(src), _)] => {
 				build.b4(OP_DPR).b4(14).shift(SH_0).b1(1).gpr(*dst).gpr(R0).gpr(*src).finish()
 			}
-			[(GPR(dst), _), (ShReg(src, shift), _)] => {
+			[(GPR(dst), _), (ShReg(src, shift, _), _)] => {
 				build.b4(OP_DPR).b4(14).shift(*shift).b1(1).gpr(*dst).gpr(R0).gpr(*src).finish()
 			}
 			_ => return invalid_operands(&mnemonic, inst.span, source),
@@ -435,7 +435,7 @@ pub fn encode_inst(
 			[(GPR(dst), _), (GPR(src1), _), (GPR(src2), _)] => {
 				build.b4(OP_DPR).b4(8).shift(SH_0).b1(1).gpr(*dst).gpr(*src1).gpr(*src2).finish()
 			}
-			[(GPR(dst), _), (GPR(src1), _), (ShReg(src2, shift), _)] => {
+			[(GPR(dst), _), (GPR(src1), _), (ShReg(src2, shift, _), _)] => {
 				build.b4(OP_DPR).b4(8).shift(*shift).b1(1).gpr(*dst).gpr(*src1).gpr(*src2).finish()
 			}
 			[(GPR(dst), _), (GPR(src1), _), (LogicImd { level, ones, rot }, _)] => {
@@ -448,7 +448,7 @@ pub fn encode_inst(
 			[(GPR(dst), _), (GPR(src1), _), (GPR(src2), _)] => {
 				build.b4(OP_DPR).b4(9).shift(SH_0).b1(1).gpr(*dst).gpr(*src1).gpr(*src2).finish()
 			}
-			[(GPR(dst), _), (GPR(src1), _), (ShReg(src2, shift), _)] => {
+			[(GPR(dst), _), (GPR(src1), _), (ShReg(src2, shift, _), _)] => {
 				build.b4(OP_DPR).b4(9).shift(*shift).b1(1).gpr(*dst).gpr(*src1).gpr(*src2).finish()
 			}
 			[(GPR(dst), _), (GPR(src1), _), (LogicImd { level, ones, rot }, _)] => {
@@ -461,7 +461,7 @@ pub fn encode_inst(
 			[(GPR(dst), _), (GPR(src1), _), (GPR(src2), _)] => {
 				build.b4(OP_DPR).b4(10).shift(SH_0).b1(1).gpr(*dst).gpr(*src1).gpr(*src2).finish()
 			}
-			[(GPR(dst), _), (GPR(src1), _), (ShReg(src2, shift), _)] => {
+			[(GPR(dst), _), (GPR(src1), _), (ShReg(src2, shift, _), _)] => {
 				build.b4(OP_DPR).b4(10).shift(*shift).b1(1).gpr(*dst).gpr(*src1).gpr(*src2).finish()
 			}
 			[(GPR(dst), _), (GPR(src1), _), (LogicImd { level, ones, rot }, _)] => {
@@ -474,7 +474,7 @@ pub fn encode_inst(
 			[(GPR(dst), _), (GPR(src1), _), (GPR(src2), _)] => {
 				build.b4(OP_DPR).b4(11).shift(SH_0).b1(1).gpr(*dst).gpr(*src1).gpr(*src2).finish()
 			}
-			[(GPR(dst), _), (GPR(src1), _), (ShReg(src2, shift), _)] => {
+			[(GPR(dst), _), (GPR(src1), _), (ShReg(src2, shift, _), _)] => {
 				build.b4(OP_DPR).b4(11).shift(*shift).b1(1).gpr(*dst).gpr(*src1).gpr(*src2).finish()
 			}
 			[(GPR(dst), _), (GPR(src1), _), (LogicImd { level, ones, rot }, _)] => {
@@ -487,7 +487,7 @@ pub fn encode_inst(
 			[(GPR(dst), _), (GPR(src1), _), (GPR(src2), _)] => {
 				build.b4(OP_DPR).b4(12).shift(SH_0).b1(1).gpr(*dst).gpr(*src1).gpr(*src2).finish()
 			}
-			[(GPR(dst), _), (GPR(src1), _), (ShReg(src2, shift), _)] => {
+			[(GPR(dst), _), (GPR(src1), _), (ShReg(src2, shift, _), _)] => {
 				build.b4(OP_DPR).b4(12).shift(*shift).b1(1).gpr(*dst).gpr(*src1).gpr(*src2).finish()
 			}
 			[(GPR(dst), _), (GPR(src1), _), (LogicImd { level, ones, rot }, _)] => {
@@ -500,7 +500,7 @@ pub fn encode_inst(
 			[(GPR(dst), _), (GPR(src1), _), (GPR(src2), _)] => {
 				build.b4(OP_DPR).b4(13).shift(SH_0).b1(1).gpr(*dst).gpr(*src1).gpr(*src2).finish()
 			}
-			[(GPR(dst), _), (GPR(src1), _), (ShReg(src2, shift), _)] => {
+			[(GPR(dst), _), (GPR(src1), _), (ShReg(src2, shift, _), _)] => {
 				build.b4(OP_DPR).b4(13).shift(*shift).b1(1).gpr(*dst).gpr(*src1).gpr(*src2).finish()
 			}
 			[(GPR(dst), _), (GPR(src1), _), (LogicImd { level, ones, rot }, _)] => {
@@ -513,7 +513,7 @@ pub fn encode_inst(
 			[(GPR(dst), _), (GPR(src1), _), (GPR(src2), _)] => {
 				build.b4(OP_DPR).b4(14).shift(SH_0).b1(1).gpr(*dst).gpr(*src1).gpr(*src2).finish()
 			}
-			[(GPR(dst), _), (GPR(src1), _), (ShReg(src2, shift), _)] => {
+			[(GPR(dst), _), (GPR(src1), _), (ShReg(src2, shift, _), _)] => {
 				build.b4(OP_DPR).b4(14).shift(*shift).b1(1).gpr(*dst).gpr(*src1).gpr(*src2).finish()
 			}
 			[(GPR(dst), _), (GPR(src1), _), (LogicImd { level, ones, rot }, _)] => {
@@ -526,7 +526,7 @@ pub fn encode_inst(
 			[(GPR(dst), _), (GPR(src1), _), (GPR(src2), _)] => {
 				build.b4(OP_DPR).b4(15).shift(SH_0).b1(1).gpr(*dst).gpr(*src1).gpr(*src2).finish()
 			}
-			[(GPR(dst), _), (GPR(src1), _), (ShReg(src2, shift), _)] => {
+			[(GPR(dst), _), (GPR(src1), _), (ShReg(src2, shift, _), _)] => {
 				build.b4(OP_DPR).b4(15).shift(*shift).b1(1).gpr(*dst).gpr(*src1).gpr(*src2).finish()
 			}
 			[(GPR(dst), _), (GPR(src1), _), (LogicImd { level, ones, rot }, _)] => {
@@ -811,12 +811,12 @@ pub fn encode_inst(
 		},
 		"ld" => match operands {
 			[(GPR(dst), _), (Offset(offset, span1), _)] => {
-				build = build.b4(OP_MEM).b2(3).b2(0).scaled_s_imd(*offset, 19, 3, *span1)?;
+				build = build.b4(OP_MEM).b2(3).b2(0).scaled_s_imd(*offset, 19, 2, *span1)?;
 				build.gpr(*dst).finish()
 			}
 			[(GPR(dst), _), (BaseOffset { base, offset, offset_span, writeback }, _)] => {
 				build = build.b4(OP_MEM).b1(*writeback as u8).b1(0).b2(0).b2(0).gpr(*dst);
-				build.gpr(*base).scaled_s_imd(*offset, 12, 3, *offset_span)?.finish()
+				build.gpr(*base).scaled_s_imd(*offset, 12, 2, *offset_span)?.finish()
 			}
 			[(GPR(dst), _), (BaseIndex { base, index, shift, shift_span }, _)] => {
 				build = build.b4(OP_MEM).b2(2).b6(0).b2(0).b2(0).ind_sh(*shift, 3, *shift_span)?;
@@ -871,7 +871,7 @@ pub fn encode_inst(
 		"st" => match operands {
 			[(GPR(src), _), (BaseOffset { base, offset, offset_span, writeback }, _)] => {
 				build = build.b4(OP_MEM).b1(*writeback as u8).b1(0).b2(1).b2(0).gpr(*src);
-				build.gpr(*base).scaled_s_imd(*offset, 12, 3, *offset_span)?.finish()
+				build.gpr(*base).scaled_s_imd(*offset, 12, 2, *offset_span)?.finish()
 			}
 			[(GPR(src), _), (BaseIndex { base, index, shift, shift_span }, _)] => {
 				build = build.b4(OP_MEM).b2(2).b6(0).b2(1).b2(0).ind_sh(*shift, 3, *shift_span)?;
@@ -968,7 +968,7 @@ pub fn encode_inst(
 			}
 			_ => return invalid_operands(&mnemonic, inst.span, source),
 		},
-		"jmp" => match operands {
+		"jmp.old" => match operands {
 			[(BaseIndex { base, index, shift, shift_span }, _)] => {
 				let sh = match shift {
 					2..=9 => shift - 2,
@@ -998,6 +998,40 @@ pub fn encode_inst(
 			[(GPR(link), _), (BaseOffset { base, offset, offset_span, writeback: false }, _)] => {
 				let build = build.b4(OP_BRANCH).b4(4).b4(1);
 				build.scaled_s_imd(*offset, 10, 2, *offset_span)?.gpr(*base).gpr(*link).finish()
+			}
+			_ => return invalid_operands(&mnemonic, inst.span, source),
+		},
+		"jmp" => match operands {
+			[(GPR(dst), _)] => {
+				build.b4(OP_BRANCH).b4(4).b8(0).b3(0).b3(0).gpr(R0).gpr(*dst).finish()
+			}
+			[(GPR(link), _), (GPR(dst), _)] => {
+				build.b4(OP_BRANCH).b4(4).b8(0).b3(0).b3(0).gpr(*link).gpr(*dst).finish()
+			}
+			_ => return invalid_operands(&mnemonic, inst.span, source),
+		},
+		"jmp.table" => match operands {
+			[(ShReg(index, Shift::SHL(sh), shift_span), _)] => {
+				let sh = match sh {
+					2..=9 => sh - 2,
+					_ => {
+						let src = source.source_of(*shift_span);
+						return err!("invalid shift amount ({src})", (*shift_span, source));
+					}
+				} as i64;
+				build = build.b4(OP_BRANCH).b4(4).b8(0).b3(1).u_imd(sh, 3, *shift_span)?;
+				build.gpr(R0).gpr(*index).finish()
+			}
+			[(GPR(link), _), (ShReg(index, Shift::SHL(sh), shift_span), _)] => {
+				let sh = match sh {
+					2..=9 => sh - 2,
+					_ => {
+						let src = source.source_of(*shift_span);
+						return err!("invalid shift amount ({src})", (*shift_span, source));
+					}
+				} as i64;
+				build = build.b4(OP_BRANCH).b4(4).b8(0).b3(1).u_imd(sh, 3, *shift_span)?;
+				build.gpr(*link).gpr(*index).finish()
 			}
 			_ => return invalid_operands(&mnemonic, inst.span, source),
 		},

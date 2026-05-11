@@ -91,7 +91,7 @@ pub enum OperandKind {
 	GPR(Reg),
 	PC(Reg),
 	C0(Reg),
-	ShReg(Reg, Shift),
+	ShReg(Reg, Shift, Span),
 	Imd(i64),
 	Label(Ident),
 	LogicImd { level: u8, ones: u8, rot: u8 },
@@ -502,7 +502,7 @@ fn parse_operand(cur: &Cursor) -> Result<Operand, Error> {
 			};
 
 			let span = Span::join(ident.span, amount_span);
-			Ok(Operand { span, kind: ShReg(reg, shift) })
+			Ok(Operand { span, kind: ShReg(reg, shift, amount_span) })
 		} else {
 			Ok(Operand { span: ident.span, kind: GPR(reg) })
 		}
@@ -573,6 +573,10 @@ pub fn parse(source: &mut Source) -> Result<Vec<AsmLine>, Error> {
 			cur.consume(NL)?;
 			eat_newlines(cur);
 		}
+	}
+
+	if lines.is_empty() {
+		return err!("empty file", (Span::none(), source));
 	}
 
 	Ok(lines)

@@ -192,7 +192,7 @@ or r4, r1, r3 rol 31
 let imd = ("+" | "-")? nb | logic_imd;
 let imd_type = 
 	"u2_imd" | "u3_imd" | "u6_imd" | "u12_imd" | "u16_imd"
-	| "s9_imd" | "s10_imd" | "s12_imd" | "s19_imd" | "s24_imd" 
+	| "s9_imd" | "s12_imd" | "s19_imd" | "s24_imd" 
 	| "logic_imd"
 ;
 ```
@@ -200,7 +200,7 @@ Immediate operands are integer literals that get encoded directly into the instr
 
 They can be signed or unsigned and come in different sizes. The available sizes are:
 - For unsigned immediates: 2 bits (`u2_imd`), 3 bits (`u3_imd`), 6 bits (`u6_imd`), 12 bits (`u12_imd`), 16 bits (`u16_imd`).
-- For signed immediates: 9 bits (`s9_imd`), 10 bits (`s10_imd`), 12 bits (`s12_imd`), 19 bits (`s19_imd`), and 24 bits (`s24_imd`).
+- For signed immediates: 9 bits (`s9_imd`), 12 bits (`s12_imd`), 19 bits (`s19_imd`), and 24 bits (`s24_imd`).
 
 Some immediates (specifically addresses) are scaled by the data width. This means the immediate must be a multiple of the data width, and the assembler will shift the immediate down before insertion.
 
@@ -361,7 +361,7 @@ Immediates are encoded directly inside instructions in fields of various sizes.
 
 The immediate fields and their sizes are:
 - For unsigned immediates: `u2_imd` (2 bits), `u3_imd` (3 bits), `u6_imd` (6 bits), `u12_imd` (12 bits).
-- For signed immediates: `s9_imd` (9 bits), `s10_imd` (10 bits), `s12_imd` (12 bits), `s19_imd` (19 bits), and `s24_imd` (24 bits).
+- For signed immediates: `s9_imd` (9 bits), `s12_imd` (12 bits), `s19_imd` (19 bits), and `s24_imd` (24 bits).
 
 Signed immediates are encoded in two's complement. All immediates are contiguous inside the instruction except for `s9_imd`, where the sign bit is encoded separately.
 
@@ -1232,12 +1232,12 @@ ld{_, .32, .16, .8} dst:gpr, loc:offset
 
 Loads the 64, 32, 16, or 8-bit value from memory at address `loc`, and writes the result to the `dst` register.
 
-The address is computed as an `s19_imd` relative `offset` scaled by the data width.
+The address is computed as an `s19_imd` relative `offset` scaled by the data width (except 64 bits are scaled by 4 bytes).
 
 ## Memory Access (Base + Offset)
 ![mem access base offset encoding](./ref-assets/mem_base_offset.svg)
 
-The address is computed from a `base` register plus an `s12_imd` `offset` scaled by the data width.
+The address is computed from a `base` register plus an `s12_imd` `offset` scaled by the data width (except 64 bits are scaled by 4 bytes).
 
 If the `w` field is `1`, the `base` register is updated with the computed address.
 
@@ -1325,25 +1325,21 @@ Branches by a `pc`-relative `offset` scaled by 4 bytes, based on the `cond` regi
 If the `c` field is `1`, the branch is taken if `cond` is `true`, otherwise, it takes the inverse.
 
 ## Jumps
-### jmp (base + index)
+### jmp
 ```
-jmp link?:gpr, loc:base_index
+jmp link?:gpr, dst:gpr
 ```
-![jmp index encoding](./ref-assets/jmp_index.svg)
+![jmp encoding](./ref-assets/jmp.svg)
 
-Stores the address of the next instruction in the `link` register, then performs an unconditional branch to address `loc`.
+Stores the address of the next instruction in the `link` register, then performs an unconditional branch to the address stored in the `dst` register.
 
-`loc` is computed from a `base` register plus an `index` register scaled by 4 bytes and further shifted by the `sh` field.
-
-### jmp (base + offset)
+### jmp.table
 ```
-jmp link?:gpr, loc:base_offset
+jmp.table link?:gpr, index:sh_reg
 ```
-![jmp offset encoding](./ref-assets/jmp_offset.svg)
+![jmp table encoding](./ref-assets/jmp_table.svg)
 
-Stores the address of the next instruction in the `link` register, then performs an unconditional branch to address `loc`.
-
-`loc` is computed from a `base` register plus an `s10_imd` `offset` scaled by 4 bytes.
+Stores the address of the next instruction in the `link` register, then performs an unconditional branch to an address computed from `pc` plus an `index` register scaled by 4 bytes and further shifted by a `u3_imd`.
 
 ### halt
 ```
@@ -1606,5 +1602,5 @@ Halts and ends execution without catching on fire.
 | `0000` | `_` | [`br`](#br) |
 | `0001` | `_` | [`br` link](#br-link) |
 | `001x` | `_` | [`br.cond`](#br-cond) |
-| `0100` | `0000` | [`jmp` base + index](#jmp-base--index) |
-| `0100` | `0001` | [`jmp` base + offset](#jmp-base--offset) |
+| `0100` | `000` | [`jmp`](#jmp) |
+| `0100` | `001` | [`jmp.table`](#jmptable) |
