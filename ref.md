@@ -1370,7 +1370,7 @@ Halts and ends execution without catching on fire.
 | `0000` | [**3 regs**](#3-regs) |
 | `0001` | [**2 regs**](#2-regs) |
 | `0010` | [**4 regs**](#4-regs) |
-| `1xxx` | [**shift**](#shift) |
+| `1xxx` | [**shifted**](#shifted) |
 
 ### 3 regs
 #### Format 1
@@ -1455,7 +1455,7 @@ Halts and ends execution without catching on fire.
 | `1010` | 1 | [`bfins`](#bfins) |
 | `1011` | 3 | [`sel`](#sel) |
 
-### Shift
+### Shifted
 ![shift](./ref-assets/shift_enc.svg)
 
 | `o1` | `op2` | Instruction |
