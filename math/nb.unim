@@ -68,8 +68,6 @@ fn bit_dg (dg, bit) => bit: {
 		8 => 1, 9 => 1, 10 => 1, 11 => 1, 12 => 1, 13 => 1, 14 => 1, 15 => 1
 	}
 };
-// extract a bit from a number
-fn bit (nb, bit_high, bit_low) => bit_dg(nb[bit_high], bit_low);
 
 // extract low / high 1 / 2 / 3 bits from a dg
 fn low1 (dg) => dg: {

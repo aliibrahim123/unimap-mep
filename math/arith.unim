@@ -66,7 +66,6 @@ fn add68 (a, b) => add_dg(a[0], b[0], 0): {
 	[let s13, let c] => add_dg(a[14], b[14], c): {
 	[let s14, let c] => add_dg(a[15], b[15], c): {
 	[let s15, let c] => add_dg(a[16], b[16], c): {
-	// 68 bit number with additional zero at high for mult
 	[let s16, _] => [s0, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13, s14, s15, s16]
 }}}}}}}}}}}}}}}}};
 // a:n64 * b:dg + acc:n68 -> n68
@@ -100,12 +99,20 @@ fn mult (a, b) => [..a, 0] |> mult_dg(_, b[0], zero): {
 	],
 }}}}}}}}}}}}}}}};
 
+fn or_one (a) => a[0]: {
+	0 => 1, 1 => 1, 2  =>  3, 3  =>  3, 4  =>  5, 5  =>  5, 6  =>  7, 7  =>  7,
+	8 => 9, 9 => 9, 10 => 11, 11 => 11, 12 => 13, 13 => 13, 14 => 15, 15 => 15
+} |> [
+	_,    a[1], a[ 2], a[ 3], a[ 4], a[ 5], a[ 6], a[ 7], 
+	a[8], a[9], a[10], a[11], a[12], a[13], a[14], a[15]
+];
+
 // (divisor, [quotient, remainder]) -> [quotient, remainder]
 // reserve place for 1 bit of quotient
 fn udiv1 (div, acc) => shift128_by1(acc): {
 	[let quo, let acc] => sub(acc, div) |> sign(_): {
 		// if remainder > divisor, set bit to one and dec remainder
-		pos => [or(quo, one), _], 
+		pos => [or_one(quo), _], 
 		// else do nothing
 		neg => [quo, acc]
 	}
