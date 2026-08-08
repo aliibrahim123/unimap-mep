@@ -8,10 +8,9 @@ import math.logic {
 	and, or, not, xor, nand, nor, xnor, imply, bcr, count_bits, count_zeros, 
 	cls, clz, clo, ctz, cto, rev, rev8, rev16, rev32, and1, or1
 };
-import math.comp { min, max, umin, umax, eq, ne, comp, ucomp };
+import math.comp { min, max, umin, umax, eq, ne, comp, ucomp, sign_ext8, sign_ext16, sign_ext32 };
 import math.shift { 
 	shl, shr, sar, rol, funnel_shift, bitfield_insert, bitfield_extract, 
-	sign_ext8, sign_ext16, sign_ext32 
 };
 
 fn exec_dpr (inst, state) => inst[1]: {
@@ -28,7 +27,7 @@ fn exec_shift (inst, state) => [
 	// shift
 	[[let dst, let src1, let src2], let shift_amount] => low2(inst[2]): {
 		0 => shift_amount: { 
-			0 => state.regs[src2], 
+			[0, 0] => state.regs[src2], 
 			_ => shl(state.regs[src2], shift_amount) 
 		},
 		1 => shr(state.regs[src2], shift_amount),

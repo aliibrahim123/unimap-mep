@@ -1,11 +1,8 @@
-import math.nb { zero };
+import math.nb { zero, b3 };
 import math.arith { sub, sub_borrow };
 symbol pos, neg;
 
-fn sign (nb) => nb[15]: {
-	0 => pos, 1 => pos, 2  => pos, 3  => pos, 4  => pos, 5  => pos, 6  => pos, 7  => pos, 
-	8 => neg, 9 => neg, 10 => neg, 11 => neg, 12 => neg, 13 => neg, 14 => neg, 15 => neg
-};
+fn sign (nb) => b3(nb[15]): { 0 => pos, 1 => neg };
 
 fn eq (a, b) => a: { b => 1, _ => 0 };
 fn ne (a, b) => a: { b => 0, _ => 1 };
@@ -30,3 +27,16 @@ fn min (a, b) => comp(a, b): { 1 => b, _ => a };
 fn max (a, b) => comp(a, b): { 1 => a, _ => b };
 fn umin (a, b) => ucomp(a, b): { 1 => b, _ => a };
 fn umax (a, b) => ucomp(a, b): { 1 => a, _ => b };
+
+fn sign_ext8 (nb) => b3(nb[1]): {
+	0 => nb,
+	_ => [nb[0], nb[1], 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15],
+};
+fn sign_ext16 (nb) => b3(nb[3]): {
+	0 => nb,
+	_ => [nb[0], nb[1], nb[2], nb[3], 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15],
+};
+fn sign_ext32 (nb) => b3(nb[7]): {
+	0 => nb,
+	_ => [nb[0], nb[1], nb[2], nb[3], nb[4], nb[5], nb[6], nb[7], 15, 15, 15, 15, 15, 15, 15, 15],
+};

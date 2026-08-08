@@ -2,7 +2,7 @@ import cpu.common { regs, pc, mem, c0, invalid };
 import cpu.dpr { exec_dpr };
 import cpu.dpi { exec_dpi };
 import cpu.mem_ops { exec_mem };
-import cpu.branch { exec_branch, goto, next_address };
+import cpu.branch { exec_branch, branched, halted, next_address };
 import cpu.mem { read_mem_32 };
 import math.nb { zero };
 import math.comp { eq };
@@ -20,9 +20,11 @@ let init_state = {
 	c0 = 0,
 	mem = {},
 };
-fn run_iter (state) => exec(read_mem_32(state, state.pc), state) 
-	|> eq(_.pc, state.pc): { 1 => goto(_, next_address(_)), _ => _ }
-	|> [_.pc: { zero => end, _ => continue }, _];
+fn run_iter (state) => exec(read_mem_32(state, state.pc), state): {
+	[branched, let state] => [continue, state],
+	[halted, let state] => [end, state],
+	let state => [continue, { ..state, pc = next_address(state) }],
+};
 
 fn exec (inst, state) => inst[0]: {
 	1 => exec_dpr(inst, state),

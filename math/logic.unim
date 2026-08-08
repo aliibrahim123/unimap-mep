@@ -1,6 +1,7 @@
 import math.tables { and_dg, or_dg, xor_dg };
 import math.nb { zero };
 import math.arith { add8, sub8 };
+import math.tables { add_dg };
 import math.comp { sign, neg, pos };
 
 fn not_dg (a) => a: {
@@ -60,33 +61,27 @@ fn count_bits (nb) => add8(
 );
 fn count_zeros (nb) => count_bits(not(nb));
 
-fn inc_dg (dg) => dg: {
-	0 => 1, 1 =>  2, 2  =>  3, 3  =>  4, 4  =>  5, 5  =>  6, 6  =>  7, 7 => 8, 
-	8 => 9, 9 => 10, 10 => 11, 11 => 12, 12 => 13, 13 => 14, 14 => 15
-};
+fn inc_dg (dg) => add_dg(dg, 1, 0)[0];
 fn ctz_dg (dg) => dg: {
 	1 => 0, 2  => 1, 3  => 0, 4  => 2, 5  => 0, 6  => 1, 7  => 0, 8 => 3, 
 	9 => 0, 10 => 1, 11 => 0, 12 => 2, 13 => 0, 14 => 1, 15 => 0
 };
 // scan by dg from low till first non zero
-fn ctz_loop (nb, dg, pos) => nb[dg]: {
-	0 => ctz_loop(nb, inc_dg(dg), add8(pos, [4, 0])),
-	_ => add8(pos, [ctz_dg(nb[dg]), 0])
+fn ctz_loop (nb, dg_pos, bit_pos) => nb[dg_pos]: {
+	0 => ctz_loop(nb, inc_dg(dg_pos), add8(bit_pos, [4, 0])),
+	_ => add8(bit_pos, [ctz_dg(nb[dg_pos]), 0])
 };
 fn ctz (nb) => nb: { zero => [0, 4], _ => ctz_loop(nb, 0, [0, 0]) };
 
-fn dec_dg (dg) => dg: {
-	15 => 14, 14 => 13, 13 => 12, 12 => 11, 11 => 10, 10 => 9, 9 => 8, 8 => 7, 
-	7  =>  6, 6  =>  5, 5  =>  4, 4  =>  3, 3  =>  2, 2  => 1, 1 => 0
-};
+fn dec_dg (dg) => add_dg(dg, 15, 0)[0];
 fn clz_dg (dg) => dg: {
 	1 => 3, 2  => 2, 3  => 2, 4  => 1, 5  => 1, 6  => 1, 7  => 1, 8 => 0, 
 	9 => 0, 10 => 0, 11 => 0, 12 => 0, 13 => 0, 14 => 0, 15 => 0
 };
 // scan by dg from high till first non zero
-fn clz_loop (nb, dg, pos) => nb[dg]: {
-	0 => clz_loop(nb, dec_dg(dg), add8(pos, [4, 0])),
-	_ => add8(pos, [clz_dg(nb[dg]), 0])
+fn clz_loop (nb, dg_pos, bit_pos) => nb[dg_pos]: {
+	0 => clz_loop(nb, dec_dg(dg_pos), add8(bit_pos, [4, 0])),
+	_ => add8(bit_pos, [clz_dg(nb[dg_pos]), 0])
 };
 fn clz (nb) => nb: { zero => [0, 4], _ => clz_loop(nb, 15, [0, 0]) };
 

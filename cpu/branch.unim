@@ -6,11 +6,13 @@ import math.nb { zero, low2, low3, b3 };
 import math.arith { add };
 import math.shift { shl, shift_l1 };
 
+symbol halted, branched;
+
 fn exec_branch (inst, state) => inst[1]: {
 	// br offset:s24_imd
 	0 => s24_imd(inst): {
 		// halt
-		zero => goto(state, zero),
+		zero => [halted, state],
 		let address => branch_to(state, address),
 	},
 	// br link:reg, offset:s19_imd
@@ -45,8 +47,8 @@ fn exec_branch (inst, state) => inst[1]: {
 };
 
 fn next_address (state) => add(state.pc, [4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
-fn goto (state, address) => { ..state, pc = address };
-fn branch_to (state, offset) => { ..state, pc = add(state.pc, shift_l1(offset, 0, 2)) };
+fn goto (state, address) => [branched, { ..state, pc = address }];
+fn branch_to (state, offset) => goto(state, add(state.pc, shift_l1(offset, 0, 2)));
 
 fn dec_shift (low, high) => low: {
 	0 => high: { 0 => 2, 1 => 4, 2 => 6, 3 => 8 },

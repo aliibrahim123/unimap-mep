@@ -4,7 +4,8 @@ import cpu.mem {
 	write_mem_8, write_mem_16, write_mem_32, write_mem_64 
 };
 import math.nb { b0, low2, high2, n8_nb, n16_nb, n32_nb };
-import math.shift { shift_l1, sign_ext8, sign_ext16, sign_ext32 };
+import math.shift { shift_l1 };
+import math.comp { sign_ext8, sign_ext16, sign_ext32 };
 import math.arith { add };
 
 fn exec_mem (inst, state) => low2(inst[1]): {
@@ -83,6 +84,6 @@ fn exec_rel (inst, state) => cal_adress(state.pc, s19_imd(inst), high2(inst[1]))
 	|> write_reg(state, dec_1reg(inst[6], inst[7]), _);
 
 fn cal_adress (base, offset, size) => size: {
-	0 => add(base, offset),
+	3 => add(base, offset),
 	_ => add(base, shift_l1(offset, 0, size: { 0 => 2, 1 => 2, 2 => 1, 3 => 0 })),
 };
