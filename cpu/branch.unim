@@ -2,7 +2,7 @@ import cpu.common {
 	invalid, pc, regs, dec_1reg, dec_2reg, dec_3reg, write_reg, read_cond,
 	s19_imd, s24_imd
 };
-import math.nb { zero, low2, low3, high1 };
+import math.nb { zero, low2, low3, b3 };
 import math.arith { add };
 import math.shift { shl, shift_l1 };
 
@@ -35,7 +35,7 @@ fn exec_branch (inst, state) => inst[1]: {
 			// jmp.table link:reg, index:reg shl amount:u3_imd
 			1 => write_reg(state, link, next_address(state))
 				|> goto(_, add(next_address(state), 
-					dec_shift(high1(inst[4]), low2(inst[5])) |> shl(state.regs[reg], [_, 0])
+					dec_shift(b3(inst[4]), low2(inst[5])) |> shl(state.regs[reg], [_, 0])
 				)),
 			_ => invalid(state, inst),
 		} },

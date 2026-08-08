@@ -1,5 +1,5 @@
 import math.tables { add_dg };
-import math.nb { zero, bit_dg, zeros17, zeros18, one };
+import math.nb { zero, b0, b1, b2, b3, zeros17, zeros18, one };
 import math.logic { not, not8, or };
 import math.comp { sign, neg, pos, eq };
 import math.shift { shift68_l1, shift128_by1 };
@@ -70,10 +70,10 @@ fn add68 (a, b) => add_dg(a[0], b[0], 0): {
 }}}}}}}}}}}}}}}}};
 // a:n64 * b:dg + acc:n68 -> n68
 fn mult_dg (a, b, acc) => [..acc, 0]
-	|> bit_dg(b, 0): { 0 => _, 1 => add68(_, a) } 
-	|> bit_dg(b, 1): { 0 => _, 1 => add68(_, shift68_l1(a, 1)) }
-	|> bit_dg(b, 2): { 0 => _, 1 => add68(_, shift68_l1(a, 2)) }
-	|> bit_dg(b, 3): { 0 => _, 1 => add68(_, shift68_l1(a, 3)) };
+	|> b0(b): { 0 => _, 1 => add68(_, a) } 
+	|> b1(b): { 0 => _, 1 => add68(_, shift68_l1(a, 1)) }
+	|> b2(b): { 0 => _, 1 => add68(_, shift68_l1(a, 2)) }
+	|> b3(b): { 0 => _, 1 => add68(_, shift68_l1(a, 3)) };
 
 // a:nb * b:dg -> [low:nb, high:nb]
 // mult dg by dg from low

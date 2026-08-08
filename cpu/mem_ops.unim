@@ -3,7 +3,7 @@ import cpu.mem {
 	read_mem_8, read_mem_16, read_mem_32, read_mem_64, 
 	write_mem_8, write_mem_16, write_mem_32, write_mem_64 
 };
-import math.nb { low1, low2, high2,  bit_dg, n8_nb, n16_nb, n32_nb };
+import math.nb { b0, low2, high2, n8_nb, n16_nb, n32_nb };
 import math.shift { shift_l1, sign_ext8, sign_ext16, sign_ext32 };
 import math.arith { add };
 
@@ -69,7 +69,7 @@ fn exec_imd (inst, state, writeback) =>[dec_2reg(inst[2], inst[3], inst[4]), s12
 
 fn exec_index (inst, state) => dec_3reg(inst[4], inst[5], inst[6], inst[7]): {
 	[let reg, let base, let index] => cal_adress(state.regs[base], state.regs[index], 
-		low1(inst[4]): { 0 => 0, 1 => high2(inst[3]) }
+		b0(inst[4]): { 0 => 0, 1 => high2(inst[3]) }
 	) |> access_mem(state, inst, reg, _, low2(inst[3]), high2(inst[3]))
 };
 

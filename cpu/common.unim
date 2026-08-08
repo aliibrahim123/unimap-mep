@@ -1,4 +1,4 @@
-import math.nb { zero, one, low1, low2, low3, high1, high2, high3, bit_dg, n_ones };
+import math.nb { zero, one, b0, low2, low3, b1, b2, b3, high2, high3, n_ones };
 import math.shift { rol };
 symbol regs, pc, mem, c0;
 
@@ -45,7 +45,7 @@ fn dec_reg1 (field1, field2) => high2(field1): {
 	2 => low3(field2): { 0 => 2, 1 => 6, 2 => 10, 3 => 14, 4 => 18, 5 => 22, 6 => 26, 7 => 30 },
 	3 => low3(field2): { 0 => 3, 1 => 7, 2 => 11, 3 => 15, 4 => 19, 5 => 23, 6 => 27, 7 => 31 }
 };
-fn dec_reg2 (field2, field3) => high1(field2): {
+fn dec_reg2 (field2, field3) => b3(field2): {
 	0 => field3: { 
 		0 =>  0, 1 =>  2, 2  =>  4, 3  =>  6, 4  =>  8, 5  => 10, 6  => 12, 7  => 14, 
 		8 => 16, 9 => 18, 10 => 20, 11 => 22, 12 => 24, 13 => 26, 14 => 28, 15 => 30 
@@ -55,7 +55,7 @@ fn dec_reg2 (field2, field3) => high1(field2): {
 		8 => 17, 9 => 19, 10 => 21, 11 => 23, 12 => 25, 13 => 27, 14 => 29, 15 => 31 
 	}
 };
-fn dec_reg-1 (field-1, field0) => low1(field0): {
+fn dec_reg-1 (field-1, field0) => b0(field0): {
 	0 => field-1,
 	1 => field-1: {
 		0 => 16, 1 => 17, 2  => 18, 3  => 19, 4  => 20, 5  => 21, 6  => 22, 7  => 23,
@@ -75,21 +75,21 @@ fn dec_4reg (field-1, field0, field1, field2, field3) => [
 ];
 
 fn u12_imd (inst) => [inst[5], inst[6], inst[7], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-fn s12_imd (inst) => high1(inst[7]): {
+fn s12_imd (inst) => b3(inst[7]): {
 	0 => [inst[5], inst[6], inst[7],  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
 	1 => [inst[5], inst[6], inst[7], 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15]
 };
 fn imd_6_6 (inst) => [[inst[5], low2(inst[6])], u2u4_u6(high2(inst[6]), inst[7])];
 fn logic_imd (inst) => imd_6_6(inst): {
-	[let ones, let rot] => n_ones_leveled(ones, bit_dg(inst[2], 1))
+	[let ones, let rot] => n_ones_leveled(ones, b1(inst[2]))
 		|> rol(_, rot)
 };
-fn s19_imd (inst) => bit_dg(inst[6], 2): {
+fn s19_imd (inst) => b2(inst[6]): {
 	0 => [inst[2], inst[3], inst[4], inst[5], low2(inst[6]), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 	1 => low2(inst[6]): { 0 => 12, 1 => 13, 2 => 14, 3 => 15 }
 		|> [inst[2], inst[3], inst[4], inst[5], _, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15]
 };
-fn s24_imd (inst) => high1(inst[7]): {
+fn s24_imd (inst) => b3(inst[7]): {
 	0 => [inst[2], inst[3], inst[4], inst[5], inst[6], inst[7], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 	1 => [inst[2], inst[3], inst[4], inst[5], inst[6], inst[7], 15, 15, 15, 15, 15, 15, 15, 15, 15, 15]
 };

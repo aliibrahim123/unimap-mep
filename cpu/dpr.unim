@@ -2,7 +2,7 @@ import cpu.common {
 	invalid, panic, regs, read_cond, write_reg, write_2reg, write_cond, 
 	dec_3reg, dec_2reg, dec_4reg, u2u4_u6 
 };
-import math.nb { zero, one, low1, low2, low3, high1, high2, n8_nb };
+import math.nb { zero, one, b0, low2, low3, b3, high2, n8_nb };
 import math.arith { add, sub, add_op, sub_borrow, abs, negate, mult, div, udiv };
 import math.logic { 
 	and, or, not, xor, nand, nor, xnor, imply, bcr, count_bits, count_zeros, 
@@ -36,7 +36,7 @@ fn exec_shift (inst, state) => [
 		3 => rol(state.regs[src2], shift_amount)
 	}
 	// then compute
-	|> low1(inst[4]): {
+	|> b0(inst[4]): {
 		0 => inst[1]: {
 			// add dst:reg, src1:reg, src2:sh_reg
 			8  => add(state.regs[src1], _),
@@ -120,9 +120,9 @@ fn exec_3regs (inst, state) => dec_3reg(inst[4], inst[5], inst[6], inst[7]): {
 	}
 };
 // write cond, and / or with dst if specified
-fn map_cond (state, inst, dst, cond) => high1(inst[3]): {
+fn map_cond (state, inst, dst, cond) => b3(inst[3]): {
 	0 => write_cond(state, dst, cond),
-	1 => write_cond(state, dst, low1(inst[4]): {
+	1 => write_cond(state, dst, b0(inst[4]): {
 		0 => and1(read_cond(state, dst), cond),
 		1 => or1(read_cond(state, dst), cond),
 	})
