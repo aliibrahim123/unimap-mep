@@ -37,14 +37,14 @@ fn read_mem_64 (state, address) => read_mem_line(state, address) |> address[0]: 
 		_[16], _[17], _[18], _[19], _[20], _[21], _[22], _[23], 
 		_[24], _[25], _[26], _[27], _[28], _[29], _[30], _[31]
 	], 
-	_ => dbg([unaligned_address, state.pc, address]) |> panic()
+	_ => dbg([unaligned_address, address, state.pc, state]) |> panic()
 };
 fn read_mem_32 (state, address) => read_mem_line(state, address) |> address[0]: {
 	0  => [_[ 0], _[ 1], _[ 2], _[ 3], _[ 4], _[ 5], _[ 6], _[ 7]],
 	4  => [_[ 8], _[ 9], _[10], _[11], _[12], _[13], _[14], _[15]],
 	8  => [_[16], _[17], _[18], _[19], _[20], _[21], _[22], _[23]],
 	12 => [_[24], _[25], _[26], _[27], _[28], _[29], _[30], _[31]],
-	_  => dbg([unaligned_address, state.pc, address]) |> panic(),
+	_  => dbg([unaligned_address, address, state.pc, state]) |> panic(),
 };
 fn read_mem_16 (state, address) => read_mem_line(state, address) |> address[0]: {
 	0  => [_[ 0], _[ 1], _[ 2], _[ 3]],
@@ -55,7 +55,7 @@ fn read_mem_16 (state, address) => read_mem_line(state, address) |> address[0]: 
 	10 => [_[20], _[21], _[22], _[23]],
 	12 => [_[24], _[25], _[26], _[27]],
 	14 => [_[28], _[29], _[30], _[31]],
-	_ => dbg([unaligned_address, state.pc, address]) |> panic(),
+	_ => dbg([unaligned_address, address, state.pc, state]) |> panic(),
 };
 fn read_mem_8 (state, address) => read_mem_line(state, address) |> address[0]: {
 	0  => [_[ 0], _[1]],
@@ -106,7 +106,7 @@ fn write_mem_64 (state, address, value) => read_mem_line(state, address) |> addr
 		value[0], value[1], value[2], value[3], value[4], value[5], value[6], value[7],
 		value[8], value[9], value[10], value[11], value[12], value[13], value[14], value[15],
 	],
-	_ => dbg([unaligned_address, state.pc, address]) |> panic(),
+	_ => dbg([unaligned_address, address, state.pc, state]) |> panic(),
 } |> write_mem_line(state, address, _);
 fn write_mem_32 (state, address, value) => read_mem_line(state, address) |> address[0]: {
 	0 => [
@@ -133,7 +133,7 @@ fn write_mem_32 (state, address, value) => read_mem_line(state, address) |> addr
 		_[16], _[17], _[18], _[19], _[20], _[21], _[22], _[23],
 		value[0], value[1], value[2], value[3], value[4], value[5], value[6], value[7],	
 	],
-	_ => dbg([unaligned_address, state.pc, address]) |> panic(),
+	_ => dbg([unaligned_address, address, state.pc, state]) |> panic(),
 } |> write_mem_line(state, address, _);
 fn write_mem_16 (state, address, value) => read_mem_line(state, address) |> address[0]: {
 	0 => [
@@ -184,7 +184,7 @@ fn write_mem_16 (state, address, value) => read_mem_line(state, address) |> addr
 		_[16], _[17], _[18], _[19], _[20], _[21], _[22], _[23],
 		_[24], _[25], _[26], _[27], value[0], value[1], value[2], value[3],	
 	],
-	_ => dbg([unaligned_address, state.pc, address]) |> panic(),
+	_ => dbg([unaligned_address, address, state.pc, state]) |> panic(),
 } |> write_mem_line(state, address, _);
 fn write_mem_8 (state, address, value) => read_mem_line(state, address) |> address[0]: {
 	0 => [

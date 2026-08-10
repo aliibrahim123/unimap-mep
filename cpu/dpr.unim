@@ -8,6 +8,7 @@ import math.logic {
 	and, or, not, xor, nand, nor, xnor, imply, bcr, count_bits, count_zeros, 
 	cls, clz, clo, ctz, cto, rev, rev8, rev16, rev32, and1, or1
 };
+import math.tables { and_dg, or_dg };
 import math.comp { min, max, umin, umax, eq, ne, comp, ucomp, sign_ext8, sign_ext16, sign_ext32 };
 import math.shift { 
 	shl, shr, sar, rol, funnel_shift, bitfield_insert, bitfield_extract, 
@@ -122,8 +123,8 @@ fn exec_3regs (inst, state) => dec_3reg(inst[4], inst[5], inst[6], inst[7]): {
 fn map_cond (state, inst, dst, cond) => b3(inst[3]): {
 	0 => write_cond(state, dst, cond),
 	1 => write_cond(state, dst, b0(inst[4]): {
-		0 => and1(read_cond(state, dst), cond),
-		1 => or1(read_cond(state, dst), cond),
+		0 => and_dg(read_cond(state, dst), cond),
+		1 => or_dg(read_cond(state, dst), cond),
 	})
 };
 
